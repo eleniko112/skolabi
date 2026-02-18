@@ -32,13 +32,13 @@ const summarizeAnnouncementPrompt = ai.definePrompt({
   name: 'summarizeAnnouncementPrompt',
   input: {schema: SummarizeAnnouncementInputSchema},
   output: {schema: SummarizeAnnouncementOutputSchema},
-  prompt: `You are an AI assistant tasked with summarizing long texts into concise announcements for a school information board. The summary should be easy to read and fit within a limited display area.
+  prompt: `შენ ხარ AI ასისტენტი, რომელსაც ევალება გრძელი ტექსტების შეჯამება სკოლის საინფორმაციო დაფისთვის ლაკონურ განცხადებებად. შეჯამება უნდა იყოს ადვილად წასაკითხი და ეტეოდეს შეზღუდულ ჩვენების არეში.
 
-Summarize the following text:
+შეაჯამე შემდეგი ტექსტი:
 
-Text: {{{text}}}
+ტექსტი: {{{text}}}
 
-Provide a concise summary that captures the main points.`,
+წარმოადგინე ლაკონური შეჯამება, რომელიც მოიცავს ძირითად პუნქტებს.`,
 });
 
 const summarizeAnnouncementFlow = ai.defineFlow(

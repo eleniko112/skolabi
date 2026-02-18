@@ -38,13 +38,13 @@ const announcementPrompt = ai.definePrompt({
   name: 'announcementPrompt',
   input: { schema: GenerateAnnouncementInputSchema },
   output: { schema: GenerateAnnouncementOutputSchema },
-  prompt: `You are an expert copywriter tasked with drafting engaging announcements for a school information board. Your goal is to create a clear, concise, and captivating message that informs and interests the audience.
+  prompt: `შენ ხარ ექსპერტი კოპირაიტერი, რომელსაც ევალება სკოლის საინფორმაციო დაფისთვის მიმზიდველი განცხადებების შედგენა. შენი მიზანია შექმნა ნათელი, ლაკონური და მიმზიდველი მესიჯი, რომელიც აუდიტორიას მიაწვდის ინფორმაციას და დააინტერესებს.
 
-Draft an engaging announcement based on the following idea or keywords:
+შეადგინე მიმზიდველი განცხადება შემდეგ იდეაზე ან საკვანძო სიტყვებზე დაყრდნობით:
 
-Idea/Keywords: {{{promptText}}}
+იდეა/საკვანძო სიტყვები: {{{promptText}}}
 
-Ensure the announcement is suitable for a school environment and encourages positive engagement.`,
+დარწმუნდი, რომ განცხადება შეესაბამება სასკოლო გარემოს და ხელს უწყობს პოზიტიურ ჩართულობას.`,
 });
 
 const generateAnnouncementFlow = ai.defineFlow(
