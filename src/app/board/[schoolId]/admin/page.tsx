@@ -1,9 +1,9 @@
-"use client"; // Make it a client component
+"use client"; 
 
-import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { AdminDashboard } from '@/components/admin/admin-dashboard';
-import { getSchoolById } from '@/lib/schools';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import { School } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 
@@ -11,27 +11,17 @@ import { Loader2 } from 'lucide-react';
 export default function AdminPage() {
   const params = useParams<{ schoolId: string }>();
   const schoolId = params.schoolId;
+  const firestore = useFirestore();
 
-  const [schoolInfo, setSchoolInfo] = useState<School | null | undefined>(undefined);
+  const schoolDocRef = useMemoFirebase(() => {
+    if (!firestore || !schoolId) return null;
+    return doc(firestore, 'schools', schoolId);
+  }, [firestore, schoolId]);
 
-  useEffect(() => {
-    if (!schoolId) return;
-    const school = getSchoolById(schoolId);
-    setSchoolInfo(school);
+  const { data: schoolInfo, isLoading } = useDoc<School>(schoolDocRef);
 
-    const handleStorageChange = (event: StorageEvent) => {
-        if (event.key === 'schools-data') {
-           const updatedSchool = getSchoolById(schoolId);
-           setSchoolInfo(updatedSchool);
-        }
-    };
 
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-
-  }, [schoolId]);
-
-  if (schoolInfo === undefined || !schoolId) {
+  if (isLoading || !schoolId) {
     return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
   

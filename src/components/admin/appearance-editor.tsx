@@ -10,8 +10,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save, RefreshCcw } from 'lucide-react';
-import { THEME_KEY_PREFIX, defaultTheme, type Theme } from '@/lib/theme';
-import { addHistoryLog } from '@/lib/history';
+import { useDoc, useFirestore, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { doc, collection } from 'firebase/firestore';
+import { Theme } from '@/lib/types';
 
 interface AppearanceEditorProps {
     schoolId: string;
@@ -30,8 +31,6 @@ function hslToHex(hsl: string): string {
     if (!hsl) return '#000000';
     const match = hsl.match(HSL_REGEX);
     if (!match) {
-        // Return a default color if HSL is invalid, maybe log a warning.
-        // This prevents the color picker from crashing on bad manual input.
         return '#000000';
     }
     let h = parseInt(match[1]);
@@ -84,11 +83,23 @@ function hexToHsl(hex: string): string {
     return `${h} ${s}% ${l}%`;
 }
 
+const defaultTheme: Theme = {
+    background: "220 20% 97%",
+    primary: "221 39% 49%",
+    accent: "347 77% 60%",
+};
 
 export function AppearanceEditor({ schoolId }: AppearanceEditorProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const storageKey = `${THEME_KEY_PREFIX}${schoolId}`;
+  const firestore = useFirestore();
+
+  const themeDocRef = useMemoFirebase(() => {
+    if (!firestore || !schoolId) return null;
+    return doc(firestore, 'schools', schoolId, 'config', 'theme');
+  }, [firestore, schoolId]);
+
+  const { data: theme, isLoading: isDocLoading } = useDoc<Theme>(themeDocRef);
 
   const form = useForm<Theme>({
     resolver: zodResolver(themeSchema),
@@ -96,45 +107,68 @@ export function AppearanceEditor({ schoolId }: AppearanceEditorProps) {
   });
 
   useEffect(() => {
-    try {
-      const savedTheme = localStorage.getItem(storageKey);
-      if (savedTheme) {
-        form.reset(JSON.parse(savedTheme));
-      }
-    } catch (error) {
-      console.error("Could not load theme:", error);
+    if (theme) {
+        form.reset(theme);
     }
-  }, [form, storageKey]);
+  }, [theme, form]);
+  
+  const historyCollectionRef = useMemoFirebase(() => {
+      if (!firestore || !schoolId) return null;
+      return collection(firestore, `schools/${schoolId}/history`);
+  }, [firestore, schoolId]);
 
   function onSubmit(values: Theme) {
+    if (!themeDocRef) return;
     setIsLoading(true);
-    try {
-        localStorage.setItem(storageKey, JSON.stringify(values));
-        window.dispatchEvent(new StorageEvent('storage', { key: storageKey, newValue: JSON.stringify(values) }));
+    
+    updateDocumentNonBlocking(themeDocRef, values);
 
-        addHistoryLog(schoolId, "გარეგნობის განახლება", "ძირითადი ფერები შეიცვალა.");
-
-        toast({
-            title: "გარეგნობა შენახულია",
-            description: "განახლებული თემა აისახა დაფაზე.",
+    if (historyCollectionRef) {
+        addDocumentNonBlocking(historyCollectionRef, {
+            action: "გარეგნობის განახლება", 
+            details: "ძირითადი ფერები შეიცვალა.",
+            timestamp: new Date().toISOString(),
         });
-    } catch (error) {
-        toast({
-            title: "შენახვა ვერ მოხერხდა",
-            description: "დაფიქსირდა შეცდომა.",
-            variant: 'destructive',
-        });
-    } finally {
-        setIsLoading(false);
     }
+
+    toast({
+        title: "გარეგნობა შენახულია",
+        description: "განახლებული თემა აისახა დაფაზე.",
+    });
+
+    setIsLoading(false);
   }
   
   const resetTheme = () => {
-    localStorage.removeItem(storageKey);
-    window.dispatchEvent(new StorageEvent('storage', { key: storageKey, newValue: null }));
+    if (!themeDocRef) return;
+    updateDocumentNonBlocking(themeDocRef, defaultTheme);
     form.reset(defaultTheme);
-    addHistoryLog(schoolId, "გარეგნობის განახლება", "თემა დაუბრუნდა საწყის მდგომარეობას.");
+    
+    if (historyCollectionRef) {
+        addDocumentNonBlocking(historyCollectionRef, {
+            action: "გარეგნობის განახლება",
+            details: "თემა დაუბრუნდა საწყის მდგომარეობას.",
+            timestamp: new Date().toISOString(),
+        });
+    }
+
     toast({ title: "თემა საწყის მდგომარეობაში დაბრუნდა" });
+  }
+
+  if(isDocLoading) {
+      return (
+          <Card>
+              <CardHeader>
+                <CardTitle>დაფის გარეგნობის რედაქტორი</CardTitle>
+                <CardDescription>
+                შეცვალეთ ძირითადი ფერები (ფონი, მთავარი, აქცენტი). გამოიყენეთ პალიტრა ან შეიყვანეთ ფერი HSL ფორმატში (მაგ: 211 32% 28%).
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex items-center justify-center p-8">
+                <Loader2 className="h-8 w-8 animate-spin" />
+              </CardContent>
+          </Card>
+      );
   }
 
   return (

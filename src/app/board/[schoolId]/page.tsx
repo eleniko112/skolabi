@@ -1,6 +1,5 @@
-"use client"; // Needs to be client component for hooks
+"use client";
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -10,32 +9,24 @@ import { QRCodeDisplay } from '@/components/board/qr-code-display';
 import Image from 'next/image';
 import { Settings, School as SchoolIcon, Loader2 } from 'lucide-react';
 import { EmergencyOverlay } from '@/components/board/emergency-overlay';
-import { getSchoolById } from '@/lib/schools';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import { School } from '@/lib/types';
 
 
 export default function BoardPage() {
   const params = useParams<{ schoolId: string }>();
   const schoolId = params.schoolId;
-  const [schoolInfo, setSchoolInfo] = useState<School | null | undefined>(undefined);
+  const firestore = useFirestore();
 
-  useEffect(() => {
-    if (!schoolId) return;
-    const school = getSchoolById(schoolId);
-    setSchoolInfo(school);
-    
-    const handleStorageChange = (event: StorageEvent) => {
-        if (event.key === 'schools-data') {
-           const updatedSchool = getSchoolById(schoolId);
-           setSchoolInfo(updatedSchool);
-        }
-    };
+  const schoolDocRef = useMemoFirebase(() => {
+    if (!firestore || !schoolId) return null;
+    return doc(firestore, 'schools', schoolId);
+  }, [firestore, schoolId]);
 
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, [schoolId]);
-
-  if (schoolInfo === undefined || !schoolId) {
+  const { data: schoolInfo, isLoading } = useDoc<School>(schoolDocRef);
+  
+  if (isLoading || !schoolId) {
     return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 

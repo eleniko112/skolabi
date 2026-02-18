@@ -1,62 +1,45 @@
 "use client";
 
-import { useState, useEffect } from 'react';
 import { Siren, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { addHistoryLog } from '@/lib/history';
-import { getEmergencyKey, type EmergencyState } from '@/lib/emergency';
-
-const defaultState: EmergencyState = {
-    active: false,
-    message: '',
-};
+import { useDoc, useFirestore, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { doc, collection } from 'firebase/firestore';
+import { EmergencyState } from '@/lib/types';
+import { Loader2 } from 'lucide-react';
 
 export function EmergencyOverlay({ schoolId }: { schoolId: string }) {
-  const [emergencyState, setEmergencyState] = useState<EmergencyState | null>(null);
-  const storageKey = getEmergencyKey(schoolId);
+  const firestore = useFirestore();
+  
+  const emergencyDocRef = useMemoFirebase(() => {
+    if (!firestore || !schoolId) return null;
+    return doc(firestore, 'schools', schoolId, 'config', 'emergency');
+  }, [firestore, schoolId]);
 
-  useEffect(() => {
-    const updateState = () => {
-        if(!schoolId) return;
-        try {
-            const savedState = localStorage.getItem(storageKey);
-            setEmergencyState(savedState ? JSON.parse(savedState) : defaultState);
-        } catch (error) {
-            console.error("Could not load emergency state:", error);
-            setEmergencyState(defaultState);
-        }
-    };
+  const { data: emergencyState, isLoading } = useDoc<EmergencyState>(emergencyDocRef);
 
-    updateState(); // Initial load
-
-    const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === storageKey) {
-        updateState();
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, [schoolId, storageKey]);
+  const historyCollectionRef = useMemoFirebase(() => {
+      if (!firestore || !schoolId) return null;
+      return collection(firestore, 'schools', schoolId, 'history');
+  }, [firestore, schoolId]);
   
   const handleClose = () => {
-    if(!schoolId || !emergencyState) return;
-    const newState = { ...emergencyState, active: false };
-    try {
-        const dataToSave = JSON.stringify(newState);
-        localStorage.setItem(storageKey, dataToSave);
-        window.dispatchEvent(new StorageEvent('storage', { key: storageKey, newValue: dataToSave }));
-        addHistoryLog(schoolId, "საგანგებო რეჟიმის გამორთვა", "რეჟიმი გამოირთო დაფიდან.");
-        setEmergencyState(newState);
-    } catch(error) {
-        console.error("Failed to disable emergency mode:", error);
+    if(!emergencyDocRef || !emergencyState) return;
+
+    updateDocumentNonBlocking(emergencyDocRef, { active: false });
+
+    if (historyCollectionRef) {
+        addDocumentNonBlocking(historyCollectionRef, {
+            action: "საგანგებო რეჟიმის გამორთვა",
+            details: "რეჟიმი გამოირთო დაფიდან.",
+            timestamp: new Date().toISOString(),
+        });
     }
   }
 
-  if (!emergencyState?.active) {
+  if (isLoading || !emergencyState?.active) {
     return null;
   }
-
+  
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-destructive/95 text-destructive-foreground p-8 animate-in fade-in duration-500">
       <Button 

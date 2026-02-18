@@ -11,15 +11,26 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save, Music, KeyRound, Image as ImageIcon, Building, Volume2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { SETTINGS_KEY_PREFIX, defaultSettings, bellSoundOptions, type SchoolSettings } from '@/lib/settings';
-import { getSchoolById, updateSchool } from '@/lib/schools';
-import { School } from '@/lib/types';
+import { School, SchoolSettings } from '@/lib/types';
 import { Separator } from '../ui/separator';
-import { addHistoryLog } from '@/lib/history';
+import { useDoc, useFirestore, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { doc, collection } from 'firebase/firestore';
+
 
 interface SettingsEditorProps {
     schoolId: string;
 }
+
+const bellSoundOptions = [
+  { value: 'default', label: 'სტანდარტული' },
+  { value: 'digital', label: 'ციფრული' },
+  { value: 'chime', label: 'წკარუნი' },
+  { value: 'short-beep', label: 'მოკლე სიგნალი' },
+];
+
+const defaultSettings: SchoolSettings = {
+  bellSound: 'default',
+};
 
 // Combined schema for all settings
 const settingsSchema = z.object({
@@ -32,7 +43,6 @@ const settingsSchema = z.object({
 
 // Web Audio API function to play sounds
 const playBellSound = (sound: string) => {
-    // Ensure this runs only in the browser
     if (typeof window === 'undefined') return;
 
     const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -80,11 +90,22 @@ const playBellSound = (sound: string) => {
 
 
 export function SettingsEditor({ schoolId }: SettingsEditorProps) {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-  const settingsStorageKey = `${SETTINGS_KEY_PREFIX}${schoolId}`;
-  
-  const [currentSchool, setCurrentSchool] = useState<School | null>(null);
+  const firestore = useFirestore();
+
+  const settingsDocRef = useMemoFirebase(() => {
+    if (!firestore || !schoolId) return null;
+    return doc(firestore, 'schools', schoolId, 'config', 'settings');
+  }, [firestore, schoolId]);
+
+  const schoolDocRef = useMemoFirebase(() => {
+    if (!firestore || !schoolId) return null;
+    return doc(firestore, 'schools', schoolId);
+  }, [firestore, schoolId]);
+
+  const { data: settings, isLoading: isLoadingSettings } = useDoc<SchoolSettings>(settingsDocRef);
+  const { data: school, isLoading: isLoadingSchool } = useDoc<School>(schoolDocRef);
 
   const form = useForm<z.infer<typeof settingsSchema>>({
     resolver: zodResolver(settingsSchema),
@@ -98,66 +119,70 @@ export function SettingsEditor({ schoolId }: SettingsEditorProps) {
   });
 
   useEffect(() => {
-    try {
-      // Load general settings
-      const savedSettings = localStorage.getItem(settingsStorageKey);
-      if (savedSettings) {
-        const parsed = JSON.parse(savedSettings);
-        form.setValue('bellSound', parsed.bellSound || defaultSettings.bellSound);
-      }
-
-      // Load school-specific data
-      const schoolData = getSchoolById(schoolId);
-      if (schoolData) {
-        setCurrentSchool(schoolData);
-        form.setValue('schoolName', schoolData.name);
-        form.setValue('logoUrl', schoolData.logoUrl || '');
-        form.setValue('adminPin', schoolData.adminPin || '');
-        form.setValue('boardPassword', schoolData.password || '');
-      }
-    } catch (error) {
-      console.error("Could not load settings:", error);
+    if (settings) {
+        form.setValue('bellSound', settings.bellSound || defaultSettings.bellSound);
     }
-  }, [form, settingsStorageKey, schoolId]);
+    if (school) {
+        form.setValue('schoolName', school.name);
+        form.setValue('logoUrl', school.logoUrl || '');
+        form.setValue('adminPin', school.adminPin || '');
+        form.setValue('boardPassword', school.password || '');
+    }
+  }, [settings, school, form]);
+
+  const historyCollectionRef = useMemoFirebase(() => {
+    if (!firestore || !schoolId) return null;
+    return collection(firestore, `schools/${schoolId}/history`);
+  }, [firestore, schoolId]);
 
   function onSubmit(values: z.infer<typeof settingsSchema>) {
-    setIsLoading(true);
-    if (!currentSchool) {
-        toast({ title: "შეცდომა", description: "სკოლის მონაცემები ვერ მოიძებნა.", variant: 'destructive'});
-        setIsLoading(false);
-        return;
-    }
-    try {
-        // Save general settings
-        const generalSettings: SchoolSettings = { bellSound: values.bellSound };
-        localStorage.setItem(settingsStorageKey, JSON.stringify(generalSettings));
-        window.dispatchEvent(new StorageEvent('storage', { key: settingsStorageKey, newValue: JSON.stringify(generalSettings) }));
+    if (!settingsDocRef || !schoolDocRef) return;
 
-        // Save school-specific data
-        const updatedSchoolData: School = {
-            ...currentSchool,
-            name: values.schoolName,
-            logoUrl: values.logoUrl,
-            adminPin: values.adminPin,
-            password: values.boardPassword,
-        };
-        updateSchool(updatedSchoolData);
+    setIsSubmitting(true);
+    
+    // Update general settings
+    const generalSettings: SchoolSettings = { bellSound: values.bellSound };
+    updateDocumentNonBlocking(settingsDocRef, generalSettings);
 
-        addHistoryLog(schoolId, "პარამეტრების შენახვა", "ზოგადი და სკოლის პარამეტრები განახლდა.");
-
-        toast({
-            title: "პარამეტრები შენახულია",
-            description: "განახლებული პარამეტრები აისახა სისტემაში.",
+    // Update school-specific data
+    const schoolData = {
+        name: values.schoolName,
+        logoUrl: values.logoUrl,
+        adminPin: values.adminPin,
+        password: values.boardPassword,
+    };
+    updateDocumentNonBlocking(schoolDocRef, schoolData);
+    
+    if (historyCollectionRef) {
+        addDocumentNonBlocking(historyCollectionRef, {
+            action: "პარამეტრების შენახვა",
+            details: "ზოგადი და სკოლის პარამეტრები განახლდა.",
+            timestamp: new Date().toISOString(),
         });
-    } catch (error) {
-        toast({
-            title: "შენახვა ვერ მოხერხდა",
-            description: "დაფიქსირდა შეცდომა.",
-            variant: 'destructive',
-        });
-    } finally {
-        setIsLoading(false);
     }
+
+    toast({
+        title: "პარამეტრები შენახულია",
+        description: "განახლებული პარამეტრები აისახა სისტემაში.",
+    });
+
+    setIsSubmitting(false);
+  }
+
+  const isLoading = isLoadingSettings || isLoadingSchool;
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>ზოგადი პარამეტრები</CardTitle>
+          <CardDescription>სკოლის დაფის ზოგადი და სკოლის სპეციფიკური პარამეტრების მართვა.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex justify-center items-center p-8">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
@@ -186,7 +211,7 @@ export function SettingsEditor({ schoolId }: SettingsEditorProps) {
                           field.onChange(value);
                           playBellSound(value);
                         }} 
-                        defaultValue={field.value}
+                        value={field.value}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -275,8 +300,8 @@ export function SettingsEditor({ schoolId }: SettingsEditorProps) {
             </div>
             
             <div className="flex justify-end items-center pt-4">
-                <Button type="submit" disabled={isLoading}>
-                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                     შენახვა
                 </Button>
             </div>

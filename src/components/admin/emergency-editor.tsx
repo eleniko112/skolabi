@@ -12,8 +12,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save, Siren } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { addHistoryLog } from '@/lib/history';
-import { getEmergencyKey } from '@/lib/emergency';
+import { useDoc, useFirestore, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { doc, collection } from 'firebase/firestore';
+import { EmergencyState } from '@/lib/types';
+
 
 interface EmergencyEditorProps {
     schoolId: string;
@@ -29,7 +31,14 @@ type EmergencyFormState = z.infer<typeof emergencySchema>;
 export function EmergencyEditor({ schoolId }: EmergencyEditorProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const storageKey = getEmergencyKey(schoolId);
+  const firestore = useFirestore();
+
+  const emergencyDocRef = useMemoFirebase(() => {
+    if (!firestore || !schoolId) return null;
+    return doc(firestore, 'schools', schoolId, 'config', 'emergency');
+  }, [firestore, schoolId]);
+
+  const { data: emergencyState, isLoading: isDocLoading } = useDoc<EmergencyState>(emergencyDocRef);
 
   const form = useForm<EmergencyFormState>({
     resolver: zodResolver(emergencySchema),
@@ -40,44 +49,55 @@ export function EmergencyEditor({ schoolId }: EmergencyEditorProps) {
   });
 
   useEffect(() => {
-    // Load initial state from localStorage on the client
-    if (!schoolId) return;
-    try {
-      const savedState = localStorage.getItem(storageKey);
-      if (savedState) {
-        form.reset(JSON.parse(savedState));
-      }
-    } catch (error) {
-      console.error("Could not load emergency state:", error);
+    if (emergencyState) {
+        form.reset(emergencyState);
     }
-  }, [form, schoolId, storageKey]);
+  }, [emergencyState, form]);
+  
+  const historyCollectionRef = useMemoFirebase(() => {
+      if (!firestore || !schoolId) return null;
+      return collection(firestore, `schools/${schoolId}/history`);
+  }, [firestore, schoolId]);
+
 
   const isActive = form.watch('active');
 
   function onSubmit(values: EmergencyFormState) {
+    if (!emergencyDocRef) return;
     setIsLoading(true);
-    try {
-        // Save to localStorage
-        localStorage.setItem(storageKey, JSON.stringify(values));
-        // Dispatch a storage event so other tabs (like the board page) update in real-time
-        window.dispatchEvent(new StorageEvent('storage', { key: storageKey, newValue: JSON.stringify(values) }));
-        
-        addHistoryLog(schoolId, "საგანგებო რეჟიმის განახლება", values.active ? `გააქტიურდა შეტყობინებით: "${values.message}"` : "რეჟიმი გამოირთო");
 
-        toast({
-            title: "პარამეტრები შენახულია",
-            description: "საგანგებო რეჟიმის სტატუსი განახლდა.",
-            variant: values.active ? 'destructive' : 'default',
+    updateDocumentNonBlocking(emergencyDocRef, values);
+    
+    if (historyCollectionRef) {
+        addDocumentNonBlocking(historyCollectionRef, {
+            action: "საგანგებო რეჟიმის განახლება",
+            details: values.active ? `გააქტიურდა შეტყობინებით: "${values.message}"` : "რეჟიმი გამოირთო",
+            timestamp: new Date().toISOString(),
         });
-    } catch (error) {
-        toast({
-            title: "შენახვა ვერ მოხერხდა",
-            description: "დაფიქსირდა შეცდომა localStorage-ში შენახვისას.",
-            variant: 'destructive',
-        });
-    } finally {
-        setIsLoading(false);
     }
+
+    toast({
+        title: "პარამეტრები შენახულია",
+        description: "საგანგებო რეჟიმის სტატუსი განახლდა.",
+        variant: values.active ? 'destructive' : 'default',
+    });
+    setIsLoading(false);
+  }
+
+  if (isDocLoading) {
+      return (
+          <Card>
+              <CardHeader>
+                  <CardTitle>საგანგებო განცხადების მართვა</CardTitle>
+                  <CardDescription>
+                  აქციეთ საგანგებო რეჟიმი, რათა დაფაზე გამოჩნდეს მნიშვნელოვანი შეტყობინება.
+                  </CardDescription>
+              </CardHeader>
+              <CardContent className="flex items-center justify-center p-8">
+                <Loader2 className="h-8 w-8 animate-spin" />
+              </CardContent>
+          </Card>
+      );
   }
 
   return (
@@ -140,7 +160,7 @@ export function EmergencyEditor({ schoolId }: EmergencyEditorProps) {
               )}
             />
             
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full" disabled={isLoading || isDocLoading}>
               {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
               შენახვა
             </Button>

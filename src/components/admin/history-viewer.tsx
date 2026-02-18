@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { History, Trash2, Calendar, Edit, ShieldAlert, Palette, Settings } from 'lucide-react';
-import { getHistory, clearHistory, HISTORY_KEY_PREFIX } from '@/lib/history';
-import { HistoryLog } from '@/lib/types';
+import { History, Trash2, Calendar, Edit, ShieldAlert, Palette, Settings, Loader2 } from 'lucide-react';
+import { HistoryLog, WithId } from '@/lib/types';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ka } from 'date-fns/locale';
 import {
@@ -20,6 +19,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy, doc, writeBatch } from 'firebase/firestore';
+
 
 interface HistoryViewerProps {
     schoolId: string;
@@ -35,29 +37,36 @@ const getActionIcon = (action: string) => {
 }
 
 export function HistoryViewer({ schoolId }: HistoryViewerProps) {
-    const [history, setHistory] = useState<HistoryLog[]>([]);
     const { toast } = useToast();
+    const firestore = useFirestore();
 
-    useEffect(() => {
-        const loadHistory = () => {
-            setHistory(getHistory(schoolId));
+    const historyCollectionRef = useMemoFirebase(() => {
+      if (!firestore || !schoolId) return null;
+      return collection(firestore, 'schools', schoolId, 'history');
+    }, [firestore, schoolId]);
+
+    const historyQuery = useMemoFirebase(() => {
+        if (!historyCollectionRef) return null;
+        return query(historyCollectionRef, orderBy('timestamp', 'desc'));
+    }, [historyCollectionRef]);
+
+    const { data: history, isLoading } = useCollection<WithId<HistoryLog>>(historyQuery);
+
+    const handleClearHistory = async () => {
+        if (!firestore || !history) return;
+        
+        const batch = writeBatch(firestore);
+        history.forEach(log => {
+            const docRef = doc(firestore, 'schools', schoolId, 'history', log.id);
+            batch.delete(docRef);
+        });
+        
+        try {
+            await batch.commit();
+            toast({ title: "ისტორია გასუფთავდა" });
+        } catch (error) {
+            toast({ title: "შეცდომა", description: "ისტორიის გასუფთავება ვერ მოხერხდა", variant: "destructive" });
         }
-        loadHistory();
-
-        const storageKey = `${HISTORY_KEY_PREFIX}${schoolId}`;
-        const handleStorageChange = (event: StorageEvent) => {
-            if (event.key === storageKey || event.key?.startsWith('announcements-') || event.key?.startsWith('schedule-')) {
-                loadHistory();
-            }
-        };
-
-        window.addEventListener('storage', handleStorageChange);
-        return () => window.removeEventListener('storage', handleStorageChange);
-    }, [schoolId]);
-
-    const handleClearHistory = () => {
-        clearHistory(schoolId);
-        toast({ title: "ისტორია გასუფთავდა" });
     }
 
     return (
@@ -69,7 +78,7 @@ export function HistoryViewer({ schoolId }: HistoryViewerProps) {
                 </div>
                 <AlertDialog>
                     <AlertDialogTrigger asChild>
-                        <Button variant="destructive" disabled={history.length === 0}>
+                        <Button variant="destructive" disabled={!history || history.length === 0}>
                             <Trash2 className="mr-2 h-4 w-4" />
                             ისტორიის გასუფთავება
                         </Button>
@@ -89,7 +98,12 @@ export function HistoryViewer({ schoolId }: HistoryViewerProps) {
                 </AlertDialog>
             </CardHeader>
             <CardContent>
-                {history.length > 0 ? (
+                {isLoading && (
+                    <div className="flex justify-center py-8">
+                        <Loader2 className="h-8 w-8 animate-spin" />
+                    </div>
+                )}
+                {!isLoading && history && history.length > 0 ? (
                     <ul className="space-y-4 max-h-[60vh] overflow-y-auto pr-4">
                         {history.map(log => (
                             <li key={log.id} className="flex items-start gap-4 pb-4 border-b last:border-b-0">
@@ -106,7 +120,7 @@ export function HistoryViewer({ schoolId }: HistoryViewerProps) {
                             </li>
                         ))}
                     </ul>
-                ) : (
+                ) : !isLoading && (
                     <p className="text-muted-foreground text-center py-8">ცვლილებების ისტორია ცარიელია.</p>
                 )}
             </CardContent>

@@ -10,8 +10,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save, PlusCircle, Trash2 } from 'lucide-react';
-import { defaultSchedule, SCHEDULE_KEY_PREFIX, SchedulePeriod } from '@/lib/schedule';
-import { addHistoryLog } from '@/lib/history';
+import { SchedulePeriod } from '@/lib/types';
+import { useDoc, useFirestore, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { doc, collection } from 'firebase/firestore';
+
 
 interface ScheduleEditorProps {
     schoolId: string;
@@ -24,69 +26,105 @@ const scheduleItemSchema = z.object({
 });
 
 const scheduleSchema = z.object({
-  schedule: z.array(scheduleItemSchema),
+  periods: z.array(scheduleItemSchema),
 });
 
 type ScheduleFormValues = z.infer<typeof scheduleSchema>;
 
+const defaultSchedule: SchedulePeriod[] = [
+    { startTime: '09:00', endTime: '09:45', label: '1-ლი გაკვეთილი' },
+    { startTime: '09:45', endTime: '10:00', label: 'დასვენება' },
+    { startTime: '10:00', endTime: '10:45', label: 'მე-2 გაკვეთილი' },
+    { startTime: '10:45', endTime: '11:00', label: 'დასვენება' },
+    { startTime: '11:00', endTime: '11:45', label: 'მე-3 გაკვეთილი' },
+    { startTime: '11:45', endTime: '12:00', label: 'დასვენება' },
+    { startTime: '12:00', endTime: '12:45', label: 'მე-4 გაკვეთილი' },
+    { startTime: '12:45', endTime: '13:30', label: 'დიდი დასვენება' },
+    { startTime: '13:30', endTime: '14:15', label: 'მე-5 გაკვეთილი' },
+    { startTime: '14:15', endTime: '14:30', label: 'დასვენება' },
+    { startTime: '14:30', endTime: '15:15', label: 'მე-6 გაკვეთილი' },
+    { startTime: '15:15', endTime: '15:30', label: 'დასვენება' },
+    { startTime: '15:30', endTime: '16:15', label: 'მე-7 გაკვეთილი' },
+    { startTime: '16:15', endTime: '16:15', label: 'გაკვეთილები დასრულდა' },
+];
+
 export function ScheduleEditor({ schoolId }: ScheduleEditorProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const storageKey = `${SCHEDULE_KEY_PREFIX}${schoolId}`;
+  const firestore = useFirestore();
+
+  const scheduleDocRef = useMemoFirebase(() => {
+    if (!firestore || !schoolId) return null;
+    return doc(firestore, 'schools', schoolId, 'config', 'schedule');
+  }, [firestore, schoolId]);
+
+  const { data: scheduleData, isLoading: isDocLoading } = useDoc<{ periods: SchedulePeriod[] }>(scheduleDocRef);
 
   const form = useForm<ScheduleFormValues>({
     resolver: zodResolver(scheduleSchema),
     defaultValues: {
-      schedule: [],
+      periods: [],
     },
   });
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
-    name: "schedule",
+    name: "periods",
   });
 
   useEffect(() => {
-    try {
-      const savedSchedule = localStorage.getItem(storageKey);
-      if (savedSchedule) {
-        form.reset({ schedule: JSON.parse(savedSchedule) });
-      } else {
-        form.reset({ schedule: defaultSchedule });
-      }
-    } catch (error) {
-      console.error("Could not load schedule state:", error);
-      form.reset({ schedule: defaultSchedule });
+    const schedule = scheduleData?.periods;
+    if (schedule) {
+        form.reset({ periods: schedule });
+    } else {
+        form.reset({ periods: defaultSchedule });
     }
-  }, [form, storageKey]);
+  }, [scheduleData, form]);
+
+  const historyCollectionRef = useMemoFirebase(() => {
+      if (!firestore || !schoolId) return null;
+      return collection(firestore, `schools/${schoolId}/history`);
+  }, [firestore, schoolId]);
 
   function onSubmit(values: ScheduleFormValues) {
+    if (!scheduleDocRef) return;
     setIsLoading(true);
-    try {
-        // Sort schedule by time before saving
-        const sortedSchedule = [...values.schedule].sort((a, b) => a.startTime.localeCompare(b.startTime));
-        const finalValues = { schedule: sortedSchedule };
-        
-        localStorage.setItem(storageKey, JSON.stringify(finalValues.schedule));
-        window.dispatchEvent(new StorageEvent('storage', { key: storageKey, newValue: JSON.stringify(finalValues.schedule) }));
 
-        form.reset(finalValues); // Update form with sorted values
-        
-        addHistoryLog(schoolId, "განრიგის განახლება", `განრიგი განახლდა ${finalValues.schedule.length} პერიოდით.`);
+    const sortedSchedule = [...values.periods].sort((a, b) => a.startTime.localeCompare(b.startTime));
+    const finalValues = { periods: sortedSchedule };
+    
+    updateDocumentNonBlocking(scheduleDocRef, finalValues);
 
-        toast({
-            title: "განრიგი შენახულია",
-            description: "განახლებული ზარების განრიგი აისახა დაფაზე.",
+    form.reset(finalValues);
+    
+    if (historyCollectionRef) {
+        addDocumentNonBlocking(historyCollectionRef, {
+            action: "განრიგის განახლება",
+            details: `განრიგი განახლდა ${finalValues.periods.length} პერიოდით.`,
+            timestamp: new Date().toISOString(),
         });
-    } catch (error) {
-        toast({
-            title: "შენახვა ვერ მოხერხდა",
-            description: "დაფიქსირდა შეცდომა localStorage-ში შენახვისას.",
-            variant: 'destructive',
-        });
-    } finally {
-        setIsLoading(false);
     }
+
+    toast({
+        title: "განრიგი შენახულია",
+        description: "განახლებული ზარების განრიგი აისახა დაფაზე.",
+    });
+
+    setIsLoading(false);
+  }
+
+  if (isDocLoading) {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>ზარების განრიგის რედაქტორი</CardTitle>
+                <CardDescription>დაამატეთ, შეცვალეთ ან წაშალეთ გაკვეთილების და დასვენებების პერიოდები. ცვლილებები ავტომატურად აისახება მთავარ დაფაზე.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex items-center justify-center p-8">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </CardContent>
+        </Card>
+    );
   }
 
   return (
@@ -106,7 +144,7 @@ export function ScheduleEditor({ schoolId }: ScheduleEditorProps) {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-grow">
                         <FormField
                             control={form.control}
-                            name={`schedule.${index}.startTime`}
+                            name={`periods.${index}.startTime`}
                             render={({ field }) => (
                                 <FormItem>
                                 <FormLabel>დაწყება</FormLabel>
@@ -119,7 +157,7 @@ export function ScheduleEditor({ schoolId }: ScheduleEditorProps) {
                         />
                         <FormField
                             control={form.control}
-                            name={`schedule.${index}.endTime`}
+                            name={`periods.${index}.endTime`}
                             render={({ field }) => (
                                 <FormItem>
                                 <FormLabel>დასრულება</FormLabel>
@@ -132,7 +170,7 @@ export function ScheduleEditor({ schoolId }: ScheduleEditorProps) {
                         />
                         <FormField
                             control={form.control}
-                            name={`schedule.${index}.label`}
+                            name={`periods.${index}.label`}
                             render={({ field }) => (
                                 <FormItem className="md:col-span-1">
                                 <FormLabel>აღწერა</FormLabel>
@@ -166,7 +204,7 @@ export function ScheduleEditor({ schoolId }: ScheduleEditorProps) {
                     დამატება
                 </Button>
                 <div className='flex items-center gap-2'>
-                    <Button type="button" variant='ghost' onClick={() => form.reset({ schedule: defaultSchedule })}>
+                    <Button type="button" variant='ghost' onClick={() => form.reset({ periods: defaultSchedule })}>
                         გადატვირთვა
                     </Button>
                     <Button type="submit" disabled={isLoading}>

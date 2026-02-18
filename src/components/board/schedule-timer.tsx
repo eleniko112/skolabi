@@ -1,13 +1,15 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Bell, Clock } from 'lucide-react';
+import { Bell, Clock, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { defaultSchedule, SCHEDULE_KEY_PREFIX, SchedulePeriod } from '@/lib/schedule';
+import { SchedulePeriod } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 
 type ProcessedLesson = {
@@ -25,64 +27,32 @@ const LoadingState = () => (
                 ზარების განრიგი
             </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6 pt-6">
-            <div className="text-center p-6 bg-primary/5 rounded-lg border">
-                <div className="flex items-center justify-center gap-2 text-accent">
-                    <Bell className="h-5 w-5" />
-                    <p className="text-base font-semibold">იტვირთება...</p>
-                </div>
-                <p className="text-6xl font-bold text-primary tracking-tighter tabular-nums">
-                    --:--:--
-                </p>
-                <Progress value={0} className="mt-4 h-2" />
-            </div>
-            <Separator />
-            <div className="space-y-3 max-h-[45vh] overflow-y-auto pr-2">
-                {[...Array(5)].map((_, index) => (
-                    <div key={index} className="flex items-center justify-between text-sm animate-pulse p-2">
-                        <span className="text-muted-foreground bg-muted h-5 w-24 rounded-md">{'\u00A0'}</span>
-                        <Badge variant="outline" className="bg-muted h-6 w-32">{'\u00A0'} </Badge>
-                    </div>
-                ))}
-            </div>
+        <CardContent className="space-y-6 pt-6 flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin" />
         </CardContent>
     </Card>
 );
 
 export function ScheduleTimer({ schoolId }: { schoolId: string }) {
   const [now, setNow] = useState<Date | undefined>();
-  const [schedule, setSchedule] = useState<SchedulePeriod[]>(defaultSchedule);
-  const storageKey = `${SCHEDULE_KEY_PREFIX}${schoolId}`;
+  const firestore = useFirestore();
+
+  const scheduleDocRef = useMemoFirebase(() => {
+    if (!firestore || !schoolId) return null;
+    return doc(firestore, 'schools', schoolId, 'config', 'schedule');
+  }, [firestore, schoolId]);
+  
+  const { data: scheduleData, isLoading: isScheduleLoading } = useDoc<{ periods: SchedulePeriod[] }>(scheduleDocRef);
+  const schedule = scheduleData?.periods || [];
 
   useEffect(() => {
-    const updateSchedule = () => {
-        try {
-            const savedSchedule = localStorage.getItem(storageKey);
-            setSchedule(savedSchedule ? JSON.parse(savedSchedule) : defaultSchedule);
-        } catch (error) {
-            console.error("Could not load schedule state:", error);
-            setSchedule(defaultSchedule);
-        }
-    };
-    
-    updateSchedule();
-
     const timer = setInterval(() => setNow(new Date()), 1000);
     setNow(new Date());
 
-    const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === storageKey) {
-        updateSchedule();
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-
     return () => {
       clearInterval(timer);
-      window.removeEventListener('storage', handleStorageChange);
     };
-  }, [storageKey]);
+  }, []);
 
   const currentTimeInMinutes = now ? now.getHours() * 60 + now.getMinutes() : 0;
 
@@ -118,7 +88,7 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
   }, [schedule, currentTimeInMinutes]);
 
 
-  if (!now) {
+  if (!now || isScheduleLoading) {
     return <LoadingState />;
   }
 
