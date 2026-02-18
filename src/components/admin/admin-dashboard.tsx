@@ -27,11 +27,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { KeyRound, Loader2, ArrowLeft, ShieldCheck, Megaphone, Calendar, Palette, Settings, History, CloudLightning } from 'lucide-react';
 import { AnnouncementEditor } from './announcement-editor';
-import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '@/components/ui/card';
 import { EmergencyEditor } from './emergency-editor';
 import { ScheduleEditor } from './schedule-editor';
 import { AppearanceEditor } from './appearance-editor';
 import { SettingsEditor } from './settings-editor';
+import { HistoryViewer } from './history-viewer';
 
 interface AdminDashboardProps {
   schoolId: string;
@@ -146,15 +146,7 @@ export function AdminDashboard({ schoolId, schoolName, adminPin }: AdminDashboar
           <AppearanceEditor schoolId={schoolId} />
         </TabsContent>
         <TabsContent value="history" className="mt-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><History className="h-5 w-5"/> ცვლილებების ისტორია</CardTitle>
-                    <CardDescription>განხორციელებული ცვლილებების სრული ჩანაწერი.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-muted-foreground">ეს ფუნქციონალი დამუშავების პროცესშია. აქ გამოჩნდება ადმინისტრატორების მიერ განხორციელებული ყველა მნიშვნელოვანი ცვლილების ისტორია, როგორიცაა განცხადების დამატება, განრიგის ცვლილება და ა.შ.</p>
-                </CardContent>
-            </Card>
+            <HistoryViewer schoolId={schoolId} />
         </TabsContent>
         <TabsContent value="settings" className="mt-6">
           <SettingsEditor schoolId={schoolId} />

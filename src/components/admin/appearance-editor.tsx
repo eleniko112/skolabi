@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save, RefreshCcw } from 'lucide-react';
 import { THEME_KEY_PREFIX, defaultTheme, type Theme } from '@/lib/theme';
+import { addHistoryLog } from '@/lib/history';
 
 interface AppearanceEditorProps {
     schoolId: string;
@@ -111,6 +112,8 @@ export function AppearanceEditor({ schoolId }: AppearanceEditorProps) {
         localStorage.setItem(storageKey, JSON.stringify(values));
         window.dispatchEvent(new StorageEvent('storage', { key: storageKey, newValue: JSON.stringify(values) }));
 
+        addHistoryLog(schoolId, "გარეგნობის განახლება", "ძირითადი ფერები შეიცვალა.");
+
         toast({
             title: "გარეგნობა შენახულია",
             description: "განახლებული თემა აისახა დაფაზე.",
@@ -130,6 +133,7 @@ export function AppearanceEditor({ schoolId }: AppearanceEditorProps) {
     localStorage.removeItem(storageKey);
     window.dispatchEvent(new StorageEvent('storage', { key: storageKey, newValue: null }));
     form.reset(defaultTheme);
+    addHistoryLog(schoolId, "გარეგნობის განახლება", "თემა დაუბრუნდა საწყის მდგომარეობას.");
     toast({ title: "თემა საწყის მდგომარეობაში დაბრუნდა" });
   }
 

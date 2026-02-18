@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save, PlusCircle, Trash2 } from 'lucide-react';
 import { defaultSchedule, SCHEDULE_KEY_PREFIX, SchedulePeriod } from '@/lib/schedule';
+import { addHistoryLog } from '@/lib/history';
 
 interface ScheduleEditorProps {
     schoolId: string;
@@ -70,6 +71,8 @@ export function ScheduleEditor({ schoolId }: ScheduleEditorProps) {
         window.dispatchEvent(new StorageEvent('storage', { key: storageKey, newValue: JSON.stringify(finalValues.schedule) }));
 
         form.reset(finalValues); // Update form with sorted values
+        
+        addHistoryLog(schoolId, "განრიგის განახლება", `განრიგი განახლდა ${finalValues.schedule.length} პერიოდით.`);
 
         toast({
             title: "განრიგი შენახულია",

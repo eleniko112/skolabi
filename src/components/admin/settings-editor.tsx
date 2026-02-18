@@ -15,6 +15,7 @@ import { SETTINGS_KEY_PREFIX, defaultSettings, bellSoundOptions, type SchoolSett
 import { getSchoolById, updateSchool } from '@/lib/schools';
 import { School } from '@/lib/types';
 import { Separator } from '../ui/separator';
+import { addHistoryLog } from '@/lib/history';
 
 interface SettingsEditorProps {
     schoolId: string;
@@ -141,6 +142,8 @@ export function SettingsEditor({ schoolId }: SettingsEditorProps) {
             password: values.boardPassword,
         };
         updateSchool(updatedSchoolData);
+
+        addHistoryLog(schoolId, "პარამეტრების შენახვა", "ზოგადი და სკოლის პარამეტრები განახლდა.");
 
         toast({
             title: "პარამეტრები შენახულია",

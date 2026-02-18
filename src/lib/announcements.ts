@@ -3,6 +3,7 @@
 
 import { Announcement } from './types';
 import { PlaceHolderImages } from './placeholder-images';
+import { addHistoryLog } from './history';
 
 export const ANNOUNCEMENTS_KEY_PREFIX = 'announcements-';
 
@@ -76,6 +77,7 @@ export const addAnnouncement = (schoolId: string, announcementData: Omit<Announc
     };
     const updatedAnnouncements = [...announcements, newAnnouncement];
     saveAnnouncements(schoolId, updatedAnnouncements);
+    addHistoryLog(schoolId, 'განცხადების დამატება', newAnnouncement.title);
 };
 
 export const updateAnnouncement = (schoolId: string, updatedAnnouncement: Announcement) => {
@@ -84,11 +86,16 @@ export const updateAnnouncement = (schoolId: string, updatedAnnouncement: Announ
     if (index !== -1) {
         announcements[index] = updatedAnnouncement;
         saveAnnouncements(schoolId, announcements);
+        addHistoryLog(schoolId, 'განცხადების განახლება', updatedAnnouncement.title);
     }
 }
 
 export const deleteAnnouncement = (schoolId: string, announcementId: string) => {
     const announcements = getAnnouncements(schoolId);
+    const announcementToDelete = announcements.find(a => a.id === announcementId);
     const updatedAnnouncements = announcements.filter(a => a.id !== announcementId);
     saveAnnouncements(schoolId, updatedAnnouncements);
+    if (announcementToDelete) {
+        addHistoryLog(schoolId, 'განცხადების წაშლა', announcementToDelete.title);
+    }
 };

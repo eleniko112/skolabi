@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save, Siren } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { addHistoryLog } from '@/lib/history';
 
 interface EmergencyEditorProps {
     schoolId: string;
@@ -59,6 +60,8 @@ export function EmergencyEditor({ schoolId }: EmergencyEditorProps) {
         localStorage.setItem(EMERGENCY_STATE_KEY, JSON.stringify(values));
         // Dispatch a storage event so other tabs (like the board page) update in real-time
         window.dispatchEvent(new StorageEvent('storage', { key: EMERGENCY_STATE_KEY, newValue: JSON.stringify(values) }));
+        
+        addHistoryLog(schoolId, "საგანგებო რეჟიმის განახლება", values.active ? `გააქტიურდა შეტყობინებით: "${values.message}"` : "რეჟიმი გამოირთო");
 
         toast({
             title: "პარამეტრები შენახულია",

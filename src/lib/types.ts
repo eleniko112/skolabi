@@ -37,3 +37,10 @@ export interface EmergencyAnnouncement {
   message: string;
   updatedAt: Timestamp;
 }
+
+export interface HistoryLog {
+  id: string;
+  timestamp: string; // ISO string
+  action: string;
+  details: string;
+}
