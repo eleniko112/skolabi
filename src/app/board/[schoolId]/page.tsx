@@ -29,9 +29,9 @@ export default function BoardPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex flex-col h-screen bg-background">
       <EmergencyOverlay schoolId={schoolId} />
-      <header className="flex items-center justify-between p-4 border-b bg-card shadow-sm sticky top-0 z-20">
+      <header className="flex-shrink-0 flex items-center justify-between p-4 border-b bg-card shadow-sm z-20">
         <div className="flex items-center gap-4">
           {schoolInfo.logoUrl ? (
             <Image
@@ -56,14 +56,12 @@ export default function BoardPage() {
         </Button>
       </header>
       
-      <main className="flex-grow p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+      <main className="flex-grow p-6 grid grid-cols-1 md:grid-cols-2 gap-6 overflow-hidden">
         <ScheduleTimer schoolId={schoolId} />
         <InfoBoard schoolId={schoolId} />
       </main>
       
-      <footer className="p-4">
-        <QRCodeDisplay schoolId={schoolId} />
-      </footer>
+      <QRCodeDisplay schoolId={schoolId} />
     </div>
   );
 }
