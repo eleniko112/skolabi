@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import Image from 'next/image';
 import {
   Carousel,
@@ -12,49 +11,60 @@ import {
 } from '@/components/ui/carousel';
 import { Card, CardContent } from '@/components/ui/card';
 import Autoplay from "embla-carousel-autoplay"
-import { getAnnouncements, ANNOUNCEMENTS_KEY_PREFIX } from '@/lib/announcements';
 import { Announcement } from '@/lib/types';
-import { Megaphone } from 'lucide-react';
+import { Megaphone, Loader2 } from 'lucide-react';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
 
 
 export function InfoBoard({ schoolId }: { schoolId: string }) {
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const firestore = useFirestore();
 
-  useEffect(() => {
-    const loadAnnouncements = () => {
-        if (!schoolId) return;
-        const allAnnouncements = getAnnouncements(schoolId);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        const activeAnnouncements = allAnnouncements.filter(ann => {
-            try {
-                const startDate = new Date(ann.startDate);
-                const endDate = new Date(ann.endDate);
-                startDate.setHours(0,0,0,0);
-                endDate.setHours(0,0,0,0);
-                return ann.isActive && startDate <= today && endDate >= today;
-            } catch (e) {
-                return false;
-            }
-        });
-        setAnnouncements(activeAnnouncements);
-    };
-
-    loadAnnouncements();
-
-    const storageKey = `${ANNOUNCEMENTS_KEY_PREFIX}${schoolId}`;
-    const handleStorageChange = (event: StorageEvent) => {
-        if (event.key === storageKey) {
-            loadAnnouncements();
-        }
-    };
+  const announcementsQuery = useMemoFirebase(() => {
+    if (!firestore || !schoolId) return null;
     
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, [schoolId]);
+    const today = new Date().toISOString().split('T')[0];
 
-  if (announcements.length === 0) {
+    return query(
+        collection(firestore, 'schools', schoolId, 'announcements'),
+        where('isActive', '==', true),
+        where('startDate', '<=', today)
+    );
+  }, [firestore, schoolId]);
+
+  const { data: announcements, isLoading } = useCollection<Announcement>(announcementsQuery);
+
+  const activeAnnouncements = useMemo(() => {
+    if (!announcements) return [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return announcements.filter(ann => {
+        try {
+            const endDate = new Date(ann.endDate);
+            endDate.setHours(0,0,0,0);
+            return endDate >= today;
+        } catch (e) {
+            return false;
+        }
+    });
+  }, [announcements]);
+  
+
+  if (isLoading) {
+      return (
+        <Card className="h-full w-full shadow-xl overflow-hidden rounded-xl">
+            <CardContent className="p-0 h-full flex items-center justify-center bg-muted/20">
+                 <div className="text-center text-muted-foreground">
+                    <Loader2 className="h-16 w-16 mx-auto mb-4 animate-spin" />
+                    <h2 className="text-2xl font-semibold font-headline">იტვირთება განცხადებები...</h2>
+                </div>
+            </CardContent>
+        </Card>
+      )
+  }
+
+  if (activeAnnouncements.length === 0) {
     return (
         <Card className="h-full w-full shadow-xl overflow-hidden rounded-xl">
             <CardContent className="p-0 h-full flex items-center justify-center bg-muted/20">
@@ -80,11 +90,11 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
                 }),
             ]}
             opts={{
-                loop: true,
+                loop: activeAnnouncements.length > 1,
             }}
         >
           <CarouselContent className="h-full">
-            {announcements.map((ann) => {
+            {activeAnnouncements.map((ann) => {
               return (
                 <CarouselItem key={ann.id} className="h-full">
                   <div className="relative w-full h-full">
@@ -112,7 +122,7 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
               );
             })}
           </CarouselContent>
-          {announcements.length > 1 && (
+          {activeAnnouncements.length > 1 && (
             <>
               <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 text-white bg-black/30 hover:bg-black/50 border-none h-12 w-12" />
               <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 text-white bg-black/30 hover:bg-black/50 border-none h-12 w-12" />

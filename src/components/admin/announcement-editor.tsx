@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -19,15 +19,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from '../ui/badge';
 import { summarizeAnnouncement } from '@/ai/flows/summarize-announcement';
 import { Switch } from '@/components/ui/switch';
-import { getAnnouncements, addAnnouncement, deleteAnnouncement, updateAnnouncement, ANNOUNCEMENTS_KEY_PREFIX } from '@/lib/announcements';
 import { Announcement } from '@/lib/types';
 import { format } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { cn } from '@/lib/utils';
 import { Calendar } from '../ui/calendar';
+import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { collection, orderBy, query, doc } from 'firebase/firestore';
 
 
 interface AnnouncementEditorProps {
@@ -38,6 +38,7 @@ const announcementSchema = z.object({
   title: z.string().min(3, "სათაური უნდა შეიცავდეს მინიმუმ 3 სიმბოლოს."),
   content: z.string().min(10, "შინაარსი უნდა შეიცავდეს მინიმუმ 10 სიმბოლოს."),
   imageUrl: z.string().url("გთხოვთ მიუთითოთ ვალიდური სურათის მისამართი.").or(z.literal('')),
+  imageHint: z.string().optional(),
   startDate: z.date({ required_error: "აირჩიეთ დაწყების თარიღი" }),
   endDate: z.date({ required_error: "აირჩიეთ დასრულების თარიღი" }),
 }).refine(data => data.endDate >= data.startDate, {
@@ -47,27 +48,21 @@ const announcementSchema = z.object({
 
 
 export function AnnouncementEditor({ schoolId }: AnnouncementEditorProps) {
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
+  const firestore = useFirestore();
 
-  useEffect(() => {
-    const loadAnnouncements = () => {
-        const sortedAnnouncements = getAnnouncements(schoolId).sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        setAnnouncements(sortedAnnouncements);
-    }
-    loadAnnouncements();
+  const announcementsCollectionRef = useMemoFirebase(() => {
+    if (!firestore || !schoolId) return null;
+    return collection(firestore, 'schools', schoolId, 'announcements');
+  }, [firestore, schoolId]);
 
-    const storageKey = `${ANNOUNCEMENTS_KEY_PREFIX}${schoolId}`;
-    const handleStorageChange = (event: StorageEvent) => {
-        if (event.key === storageKey) {
-            loadAnnouncements();
-        }
-    };
+  const announcementsQuery = useMemoFirebase(() => {
+    if(!announcementsCollectionRef) return null;
+    return query(announcementsCollectionRef, orderBy('createdAt', 'desc'));
+  }, [announcementsCollectionRef]);
 
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, [schoolId]);
+  const { data: announcements, isLoading } = useCollection<Announcement>(announcementsQuery);
 
   const form = useForm<z.infer<typeof announcementSchema>>({
     resolver: zodResolver(announcementSchema),
@@ -75,6 +70,7 @@ export function AnnouncementEditor({ schoolId }: AnnouncementEditorProps) {
       title: "",
       content: "",
       imageUrl: "https://picsum.photos/seed/placeholder/1200/800",
+      imageHint: "abstract placeholder",
       startDate: new Date(),
       endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     }
@@ -99,23 +95,30 @@ export function AnnouncementEditor({ schoolId }: AnnouncementEditorProps) {
   }
 
   function onSubmit(values: z.infer<typeof announcementSchema>) {
-    addAnnouncement(schoolId, { 
+    if (!announcementsCollectionRef) return;
+    const newAnnouncement = { 
         ...values, 
         isActive: true,
         startDate: format(values.startDate, 'yyyy-MM-dd'),
         endDate: format(values.endDate, 'yyyy-MM-dd'),
-    });
+        createdAt: new Date().toISOString(),
+    };
+    addDocumentNonBlocking(announcementsCollectionRef, newAnnouncement);
     toast({ title: "განცხადება შენახულია", description: "თქვენი ცვლილებები აისახა დაფაზე." });
     form.reset();
   }
 
   const handleDelete = (announcementId: string) => {
-    deleteAnnouncement(schoolId, announcementId);
+    if (!firestore || !schoolId) return;
+    const docRef = doc(firestore, 'schools', schoolId, 'announcements', announcementId);
+    deleteDocumentNonBlocking(docRef);
     toast({ title: "განცხადება წაიშალა" });
   }
 
   const handleToggleActive = (announcement: Announcement) => {
-    updateAnnouncement(schoolId, { ...announcement, isActive: !announcement.isActive });
+    if (!firestore || !schoolId) return;
+    const docRef = doc(firestore, 'schools', schoolId, 'announcements', announcement.id);
+    updateDocumentNonBlocking(docRef, { isActive: !announcement.isActive });
     toast({ title: 'სტატუსი განახლდა' });
   }
 
@@ -139,7 +142,14 @@ export function AnnouncementEditor({ schoolId }: AnnouncementEditorProps) {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {announcements.map(ann => (
+                            {isLoading && (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="text-center">
+                                        <Loader2 className="h-6 w-6 animate-spin inline-block" />
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                            {announcements?.map(ann => (
                                 <TableRow key={ann.id} className={!ann.isActive ? 'bg-muted/50' : ''}>
                                     <TableCell>
                                         <Switch
@@ -296,6 +306,19 @@ export function AnnouncementEditor({ schoolId }: AnnouncementEditorProps) {
                     <FormLabel>სურათის მისამართი (URL)</FormLabel>
                     <FormControl>
                       <Input placeholder="https://..." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="imageHint"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>სურათის აღწერა (AI-სთვის)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="მაგ: students concert" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

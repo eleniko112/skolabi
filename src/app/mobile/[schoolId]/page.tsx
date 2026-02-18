@@ -1,73 +1,65 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { getAnnouncements, ANNOUNCEMENTS_KEY_PREFIX } from '@/lib/announcements';
-import { defaultSchedule, SCHEDULE_KEY_PREFIX, SchedulePeriod } from '@/lib/schedule';
-import { getSchoolById } from '@/lib/schools';
-import { Announcement, School } from '@/lib/types';
+import { Announcement, School, SchedulePeriod } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Megaphone, Loader2, School as SchoolIcon } from 'lucide-react';
 import { EmergencyOverlay } from '@/components/board/emergency-overlay';
-
-const getImage = (id: string) => PlaceHolderImages.find(img => img.id === id);
-
+import { useDoc, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc, collection, query, where } from 'firebase/firestore';
 
 export default function MobileSchoolPage() {
     const params = useParams<{ schoolId: string }>();
     const schoolId = params.schoolId;
+    const firestore = useFirestore();
 
-    const [school, setSchool] = useState<School | null | undefined>();
-    const [schedule, setSchedule] = useState<SchedulePeriod[]>([]);
-    const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-    const [loading, setLoading] = useState(true);
+    // School data
+    const schoolDocRef = useMemoFirebase(() => {
+        if (!firestore || !schoolId) return null;
+        return doc(firestore, 'schools', schoolId);
+    }, [firestore, schoolId]);
+    const { data: school, isLoading: isSchoolLoading } = useDoc<School>(schoolDocRef);
 
-    useEffect(() => {
-        if (!schoolId) return;
+    // Schedule data
+    const scheduleDocRef = useMemoFirebase(() => {
+        if (!firestore || !schoolId) return null;
+        return doc(firestore, 'schools', schoolId, 'config', 'schedule');
+    }, [firestore, schoolId]);
+    const { data: scheduleData, isLoading: isScheduleLoading } = useDoc<{ periods: SchedulePeriod[] }>(scheduleDocRef);
+    const schedule = scheduleData?.periods || [];
 
-        const loadData = () => {
-            const schoolData = getSchoolById(schoolId);
-            setSchool(schoolData);
-
-            const scheduleData = localStorage.getItem(`${SCHEDULE_KEY_PREFIX}${schoolId}`);
-            setSchedule(scheduleData ? JSON.parse(scheduleData) : defaultSchedule);
-
-            const allAnnouncements = getAnnouncements(schoolId);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-
-            const activeAnnouncements = allAnnouncements.filter(ann => {
-                try {
-                    const startDate = new Date(ann.startDate);
-                    const endDate = new Date(ann.endDate);
-                    startDate.setHours(0,0,0,0);
-                    endDate.setHours(0,0,0,0);
-                    return ann.isActive && startDate <= today && endDate >= today;
-                } catch (e) {
-                    return false;
-                }
-            });
-            setAnnouncements(activeAnnouncements);
-
-            setLoading(false);
-        }
-        
-        loadData();
-
-        const handleStorageChange = (event: StorageEvent) => {
-            if (event.key === 'schools-data' || event.key === `${SCHEDULE_KEY_PREFIX}${schoolId}` || event.key === `${ANNOUNCEMENTS_KEY_PREFIX}${schoolId}`) {
-                loadData();
+    // Announcements data
+    const announcementsQuery = useMemoFirebase(() => {
+        if (!firestore || !schoolId) return null;
+        const today = new Date().toISOString().split('T')[0];
+        return query(
+            collection(firestore, 'schools', schoolId, 'announcements'),
+            where('isActive', '==', true),
+            where('startDate', '<=', today)
+        );
+    }, [firestore, schoolId]);
+    const { data: announcements, isLoading: isAnnouncementsLoading } = useCollection<Announcement>(announcementsQuery);
+    
+    const activeAnnouncements = useMemo(() => {
+        if (!announcements) return [];
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return announcements.filter(ann => {
+            try {
+                const endDate = new Date(ann.endDate);
+                endDate.setHours(0,0,0,0);
+                return endDate >= today;
+            } catch (e) {
+                return false;
             }
-        };
+        });
+    }, [announcements]);
 
-        window.addEventListener('storage', handleStorageChange);
-        return () => window.removeEventListener('storage', handleStorageChange);
-
-    }, [schoolId]);
+    const loading = isSchoolLoading || isScheduleLoading || isAnnouncementsLoading;
 
     if (loading || !schoolId) {
         return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -123,7 +115,7 @@ export default function MobileSchoolPage() {
             </CardHeader>
             <CardContent>
                 <div className="space-y-6">
-                    {announcements.length > 0 ? announcements.map((ann, index) => {
+                    {activeAnnouncements.length > 0 ? activeAnnouncements.map((ann, index) => {
                         const image = ann.imageUrl;
                         return (
                             <div key={ann.id}>
