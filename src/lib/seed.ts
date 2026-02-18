@@ -25,7 +25,7 @@ const defaultSchools: School[] = [
 ];
 
 // Default Announcements Data
-const defaultAnnouncements: Omit<Announcement, 'createdAt' | 'isActive'>[] = [
+const defaultAnnouncements: Omit<Announcement, 'createdAt' | 'isActive' | 'id'>[] = [
     {
       title: 'ტრენინგი AI-ზე და ჩვენს მიდგომაზე',
       content: 'დღეს, 15:00 საათზე, სააქტო დარბაზში გაიმართება საინტერესო ტრენინგი ხელოვნურ ინტელექტზე. განვიხილავთ თანამედროვე ტექნოლოგიებს და მათ გამოყენებას განათლებაში. დასწრება თავისუფალია.',
@@ -64,9 +64,9 @@ const defaultSchedule: SchedulePeriod[] = [
 
 // Default Theme
 const defaultTheme = {
-    background: "214 25% 95%",
-    primary: "211 32% 28%",
-    accent: "267 33% 44%",
+    background: "220 20% 97%",
+    primary: "221 39% 49%",
+    accent: "347 77% 60%",
 };
 
 // Default Settings
@@ -83,11 +83,11 @@ const defaultEmergencyState = {
 
 export async function seedInitialData(db: Firestore): Promise<void> {
   const batch = writeBatch(db);
+  const schoolIds = ['1-sajaro-skola', 'me-7-sajaro-skola', 'me-3-sajaro-skola'];
 
   // 1. Seed Schools
-  // We use the school name as the document ID for simplicity in this seed script
-  for (const schoolData of defaultSchools) {
-    const schoolId = schoolData.name.replace(/\s+/g, '-').toLowerCase();
+  for (const [index, schoolData] of defaultSchools.entries()) {
+    const schoolId = schoolIds[index];
     const schoolRef = doc(db, 'schools', schoolId);
     batch.set(schoolRef, schoolData);
 
