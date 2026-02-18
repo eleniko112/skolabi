@@ -81,7 +81,7 @@ export default function BoardPage() {
       </main>
       
       <footer className="p-4">
-        <QRCodeDisplay />
+        <QRCodeDisplay schoolId={schoolId} />
       </footer>
     </div>
   );

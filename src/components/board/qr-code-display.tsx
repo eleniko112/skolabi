@@ -5,18 +5,16 @@ import Image from 'next/image';
 import { QrCode, Smartphone } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 
-export function QRCodeDisplay() {
+export function QRCodeDisplay({ schoolId }: { schoolId: string }) {
   const [qrCodeUrl, setQrCodeUrl] = useState('');
 
   useEffect(() => {
-    // This code runs only on the client, after the component has mounted.
-    // This is necessary to access `window.location.origin`.
     if (typeof window !== 'undefined') {
-      const mobileUrl = `${window.location.origin}/mobile`;
+      const mobileUrl = `${window.location.origin}/mobile/${schoolId}`;
       const generatedQrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=128x128&data=${encodeURIComponent(mobileUrl)}&qzone=1&bgcolor=F0F4F8`;
       setQrCodeUrl(generatedQrCodeUrl);
     }
-  }, []);
+  }, [schoolId]);
 
   return (
     <div className="fixed bottom-4 right-4 z-10">
