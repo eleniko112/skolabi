@@ -10,14 +10,15 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save, PlusCircle, Trash2 } from 'lucide-react';
-import { defaultSchedule, SCHEDULE_KEY_PREFIX } from '@/lib/schedule';
+import { defaultSchedule, SCHEDULE_KEY_PREFIX, SchedulePeriod } from '@/lib/schedule';
 
 interface ScheduleEditorProps {
     schoolId: string;
 }
 
 const scheduleItemSchema = z.object({
-  time: z.string().regex(/^\d{2}:\d{2}$/, "დრო უნდა იყოს HH:MM ფორმატში"),
+  startTime: z.string().regex(/^\d{2}:\d{2}$/, "დრო უნდა იყოს HH:MM ფორმატში"),
+  endTime: z.string().regex(/^\d{2}:\d{2}$/, "დრო უნდა იყოს HH:MM ფორმატში"),
   label: z.string().min(1, "სავალდებულო ველი"),
 });
 
@@ -62,7 +63,7 @@ export function ScheduleEditor({ schoolId }: ScheduleEditorProps) {
     setIsLoading(true);
     try {
         // Sort schedule by time before saving
-        const sortedSchedule = [...values.schedule].sort((a, b) => a.time.localeCompare(b.time));
+        const sortedSchedule = [...values.schedule].sort((a, b) => a.startTime.localeCompare(b.startTime));
         const finalValues = { schedule: sortedSchedule };
         
         localStorage.setItem(storageKey, JSON.stringify(finalValues.schedule));
@@ -90,7 +91,7 @@ export function ScheduleEditor({ schoolId }: ScheduleEditorProps) {
       <CardHeader>
         <CardTitle>ზარების განრიგის რედაქტორი</CardTitle>
         <CardDescription>
-          დაამატეთ, შეცვალეთ ან წაშალეთ გაკვეთილების დაწყების დროები. ცვლილებები ავტომატურად აისახება მთავარ დაფაზე.
+          დაამატეთ, შეცვალეთ ან წაშალეთ გაკვეთილების და დასვენებების პერიოდები. ცვლილებები ავტომატურად აისახება მთავარ დაფაზე.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -99,13 +100,26 @@ export function ScheduleEditor({ schoolId }: ScheduleEditorProps) {
             <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2">
               {fields.map((field, index) => (
                 <div key={field.id} className="flex items-end gap-2 p-3 border rounded-lg">
-                    <div className="grid grid-cols-2 gap-4 flex-grow">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-grow">
                         <FormField
                             control={form.control}
-                            name={`schedule.${index}.time`}
+                            name={`schedule.${index}.startTime`}
                             render={({ field }) => (
                                 <FormItem>
-                                <FormLabel>დრო</FormLabel>
+                                <FormLabel>დაწყება</FormLabel>
+                                <FormControl>
+                                    <Input type="time" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name={`schedule.${index}.endTime`}
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>დასრულება</FormLabel>
                                 <FormControl>
                                     <Input type="time" {...field} />
                                 </FormControl>
@@ -117,7 +131,7 @@ export function ScheduleEditor({ schoolId }: ScheduleEditorProps) {
                             control={form.control}
                             name={`schedule.${index}.label`}
                             render={({ field }) => (
-                                <FormItem>
+                                <FormItem className="md:col-span-1">
                                 <FormLabel>აღწერა</FormLabel>
                                 <FormControl>
                                     <Input placeholder="მაგ: 1-ლი გაკვეთილი" {...field} />
@@ -143,7 +157,7 @@ export function ScheduleEditor({ schoolId }: ScheduleEditorProps) {
                 <Button
                     type="button"
                     variant="outline"
-                    onClick={() => append({ time: '16:30', label: 'ახალი პერიოდი' })}
+                    onClick={() => append({ startTime: '16:30', endTime: '17:15', label: 'ახალი პერიოდი' })}
                 >
                     <PlusCircle className="mr-2 h-4 w-4" />
                     დამატება

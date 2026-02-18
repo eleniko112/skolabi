@@ -6,13 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { defaultSchedule, SCHEDULE_KEY_PREFIX } from '@/lib/schedule';
+import { defaultSchedule, SCHEDULE_KEY_PREFIX, SchedulePeriod } from '@/lib/schedule';
 import { cn } from '@/lib/utils';
 
-type ScheduleItem = {
-    time: string;
-    label: string;
-};
 
 type ProcessedLesson = {
     label:string;
@@ -29,7 +25,7 @@ const LoadingState = () => (
                 ზარების განრიგი
             </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-6 pt-6">
             <div className="text-center p-6 bg-primary/5 rounded-lg border">
                 <div className="flex items-center justify-center gap-2 text-accent">
                     <Bell className="h-5 w-5" />
@@ -55,7 +51,7 @@ const LoadingState = () => (
 
 export function ScheduleTimer({ schoolId }: { schoolId: string }) {
   const [now, setNow] = useState<Date | undefined>();
-  const [schedule, setSchedule] = useState<ScheduleItem[]>(defaultSchedule);
+  const [schedule, setSchedule] = useState<SchedulePeriod[]>(defaultSchedule);
   const storageKey = `${SCHEDULE_KEY_PREFIX}${schoolId}`;
 
   useEffect(() => {
@@ -90,32 +86,35 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
 
   const currentTimeInMinutes = now ? now.getHours() * 60 + now.getMinutes() : 0;
 
+  const timerSchedule = useMemo(() => {
+      if (!schedule) return [];
+      return schedule.map(period => ({
+          time: period.startTime,
+          label: period.label,
+      })).sort((a,b) => a.time.localeCompare(b.time));
+  }, [schedule]);
+
+
   const processedSchedule = useMemo((): ProcessedLesson[] => {
-    const lessons: ProcessedLesson[] = [];
-    if (!schedule || schedule.length === 0) return lessons;
+    if (!schedule || schedule.length === 0) return [];
 
-    for (let i = 0; i < schedule.length; i++) {
-        const currentItem = schedule[i];
-        if (currentItem.label.includes('გაკვეთილი') && !currentItem.label.includes('დასრულდა')) {
-            const nextItem = schedule[i + 1];
-            if (nextItem) {
-                const [startH, startM] = currentItem.time.split(':').map(Number);
-                const startTimeInMinutes = startH * 60 + startM;
-                const [endH, endM] = nextItem.time.split(':').map(Number);
-                const endTimeInMinutes = endH * 60 + endM;
+    return schedule
+        .filter(item => item.label.includes('გაკვეთილი') && !item.label.includes('დასრულდა'))
+        .map(item => {
+            const [startH, startM] = item.startTime.split(':').map(Number);
+            const startTimeInMinutes = startH * 60 + startM;
+            const [endH, endM] = item.endTime.split(':').map(Number);
+            const endTimeInMinutes = endH * 60 + endM;
 
-                const isCurrent = currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes < endTimeInMinutes;
+            const isCurrent = currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes < endTimeInMinutes;
 
-                lessons.push({
-                    label: currentItem.label,
-                    startTime: currentItem.time,
-                    endTime: nextItem.time,
-                    isCurrent
-                });
-            }
-        }
-    }
-    return lessons;
+            return {
+                label: item.label,
+                startTime: item.startTime,
+                endTime: item.endTime,
+                isCurrent
+            };
+        });
   }, [schedule, currentTimeInMinutes]);
 
 
@@ -127,7 +126,7 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
     let nextBell = null;
     let nextBellTime = Infinity;
 
-    for (const bell of schedule) {
+    for (const bell of timerSchedule) {
       const [h, m] = bell.time.split(':').map(Number);
       const bellTime = h * 60 + m;
       if (bellTime > currentTimeInMinutes && bellTime < nextBellTime) {
@@ -135,10 +134,10 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
         nextBell = bell;
       }
     }
-    if (!nextBell && schedule.length > 0) {
-        const [h, m] = schedule[0].time.split(':').map(Number);
+    if (!nextBell && timerSchedule.length > 0) {
+        const [h, m] = timerSchedule[0].time.split(':').map(Number);
         nextBellTime = (h * 60 + m) + 24 * 60;
-        nextBell = schedule[0];
+        nextBell = timerSchedule[0];
     }
     
     return { nextBell, nextBellTime };
@@ -147,7 +146,7 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
   const findPreviousBell = () => {
     let prevBell = null;
     let prevBellTime = -1;
-     for (const bell of schedule) {
+     for (const bell of timerSchedule) {
       const [h, m] = bell.time.split(':').map(Number);
       const bellTime = h * 60 + m;
       if (bellTime <= currentTimeInMinutes && bellTime > prevBellTime) {
@@ -155,8 +154,8 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
         prevBell = bell;
       }
     }
-    if (!prevBell && schedule.length > 0) {
-        const lastBell = schedule[schedule.length - 1];
+    if (!prevBell && timerSchedule.length > 0) {
+        const lastBell = timerSchedule[timerSchedule.length - 1];
         const [h, m] = lastBell.time.split(':').map(Number);
         prevBellTime = (h * 60 + m) - 24 * 60;
         prevBell = lastBell;
@@ -167,7 +166,7 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
   const { nextBell, nextBellTime } = findNextBell();
   const { prevBell, prevBellTime } = findPreviousBell();
 
-  if(!nextBell || !prevBell || schedule.length === 0) {
+  if(!nextBell || !prevBell || timerSchedule.length === 0) {
     return (
         <Card className="h-full shadow-xl rounded-xl">
             <CardHeader>
@@ -202,7 +201,7 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
           ზარების განრიგი
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6 flex-grow flex flex-col">
+      <CardContent className="space-y-6 flex-grow flex flex-col pt-6">
         <div className="text-center p-6 bg-primary/5 rounded-lg border">
             <div className="flex items-center justify-center gap-2 text-accent">
                 <Bell className="h-5 w-5" />

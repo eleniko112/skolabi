@@ -1,3 +1,5 @@
+"use client";
+
 import { Bell, Megaphone, Calendar } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -7,13 +9,13 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 // Dummy data, will be replaced by Firestore
 const schedule = [
-  { time: '09:00 - 09:45', lesson: '1-ლი გაკვეთილი' },
-  { time: '10:00 - 10:45', lesson: 'მე-2 გაკვეთილი' },
-  { time: '11:00 - 11:45', lesson: 'მე-3 გაკვეთილი' },
-  { time: '12:00 - 12:45', lesson: 'მე-4 გაკვეთილი' },
-  { time: '13:30 - 14:15', lesson: 'მე-5 გაკვეთილი' },
-  { time: '14:30 - 15:15', lesson: 'მე-6 გაკვეთილი' },
-  { time: '15:30 - 16:15', lesson: 'მე-7 გაკვეთილი' },
+  { startTime: '09:00', endTime: '09:45', lesson: '1-ლი გაკვეთილი' },
+  { startTime: '10:00', endTime: '10:45', lesson: 'მე-2 გაკვეთილი' },
+  { startTime: '11:00', endTime: '11:45', lesson: 'მე-3 გაკვეთილი' },
+  { startTime: '12:00', endTime: '12:45', lesson: 'მე-4 გაკვეთილი' },
+  { startTime: '13:30', endTime: '14:15', lesson: 'მე-5 გაკვეთილი' },
+  { startTime: '14:30', endTime: '15:15', lesson: 'მე-6 გაკვეთილი' },
+  { startTime: '15:30', endTime: '16:15', lesson: 'მე-7 გაკვეთილი' },
 ];
 
 const announcements = [
@@ -26,7 +28,7 @@ const getImage = (id: string) => PlaceHolderImages.find(img => img.id === id);
 
 export default function MobilePage() {
   return (
-    <div className="min-h-screen bg-background text-foreground p-4">
+    <div className="min-h-screen bg-background text-foreground p-4 font-body">
       <header className="text-center my-6">
         <h1 className="text-4xl font-bold font-headline text-primary">სკოლის დაფა</h1>
         <p className="text-muted-foreground mt-1">მობილური ვერსია</p>
@@ -45,7 +47,7 @@ export default function MobilePage() {
               {schedule.map((item, index) => (
                 <li key={index} className="flex items-center justify-between">
                   <span className="text-base font-medium">{item.lesson}</span>
-                  <Badge variant="secondary" className="text-sm">{item.time}</Badge>
+                  <Badge variant="secondary" className="text-sm tabular-nums">{item.startTime} - {item.endTime}</Badge>
                 </li>
               ))}
             </ul>
