@@ -16,16 +16,18 @@ import { Announcement } from '@/lib/types';
 import { Megaphone } from 'lucide-react';
 
 export function InfoBoard({ schoolId }: { schoolId: string }) {
-    const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+    const [activeAnnouncements, setActiveAnnouncements] = useState<Announcement[]>([]);
 
     useEffect(() => {
-        const currentAnnouncements = getAnnouncements(schoolId, true);
-        setAnnouncements(currentAnnouncements);
+        // Get only active announcements, and initialize if necessary
+        const currentAnnouncements = getAnnouncements(schoolId, true, true);
+        setActiveAnnouncements(currentAnnouncements);
 
         const handleStorageChange = (event: StorageEvent) => {
             if (event.key === `${ANNOUNCEMENTS_KEY_PREFIX}${schoolId}`) {
-                const updatedAnnouncements = getAnnouncements(schoolId);
-                setAnnouncements(updatedAnnouncements);
+                // On update, get only active announcements
+                const updatedAnnouncements = getAnnouncements(schoolId, false, true);
+                setActiveAnnouncements(updatedAnnouncements);
             }
         };
 
@@ -35,19 +37,6 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
             window.removeEventListener('storage', handleStorageChange);
         };
     }, [schoolId]);
-
-
-    const today = new Date();
-    const todayString = [
-      today.getFullYear(),
-      String(today.getMonth() + 1).padStart(2, '0'),
-      String(today.getDate()).padStart(2, '0'),
-    ].join('-');
-    
-    const activeAnnouncements = announcements.filter(ann => {
-        if (!ann.startDate || !ann.endDate) return false;
-        return ann.isActive && ann.startDate <= todayString && ann.endDate >= todayString;
-    });
 
   if (activeAnnouncements.length === 0) {
     return (

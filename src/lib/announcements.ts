@@ -2,7 +2,7 @@ import { Announcement } from './types';
 import { PlaceHolderImages } from './placeholder-images';
 
 // Version bump to guarantee a data reset on the client.
-export const ANNOUNCEMENTS_KEY_PREFIX = 'school-board-announcements-v7-';
+export const ANNOUNCEMENTS_KEY_PREFIX = 'school-board-announcements-v8-';
 
 function getLocalIsoDate(date: Date): string {
     const year = date.getFullYear();
@@ -51,7 +51,7 @@ const filterActiveAnnouncements = (announcements: Announcement[]): Announcement[
     });
 };
 
-export const getAnnouncements = (schoolId: string, initialize = false): Announcement[] => {
+export const getAnnouncements = (schoolId: string, initialize = false, activeOnly = false): Announcement[] => {
     const storage = getStorage();
     if (!storage) return [];
     
@@ -60,9 +60,9 @@ export const getAnnouncements = (schoolId: string, initialize = false): Announce
 
     // Self-healing mechanism: If we are in an initialization context and the loaded data
     // results in NO active announcements, we assume the data is stale/corrupted and reset it.
-    const activeAnnouncements = allAnnouncements ? filterActiveAnnouncements(allAnnouncements) : [];
+    const activeCheck = allAnnouncements ? filterActiveAnnouncements(allAnnouncements) : [];
     
-    if (initialize && (!allAnnouncements || activeAnnouncements.length === 0)) {
+    if (initialize && (!allAnnouncements || activeCheck.length === 0)) {
         const defaultData = getDefaultAnnouncements();
         allAnnouncements = defaultData.map((ann, index) => ({
             ...ann,
@@ -73,7 +73,13 @@ export const getAnnouncements = (schoolId: string, initialize = false): Announce
         storage.setItem(key, JSON.stringify(allAnnouncements));
     }
     
-    return allAnnouncements || [];
+    const announcementsToReturn = allAnnouncements || [];
+    
+    if (activeOnly) {
+        return filterActiveAnnouncements(announcementsToReturn);
+    }
+
+    return announcementsToReturn;
 };
 
 export const addAnnouncement = (schoolId: string, announcementData: Omit<Announcement, 'id' | 'createdAt' | 'isActive'>) => {

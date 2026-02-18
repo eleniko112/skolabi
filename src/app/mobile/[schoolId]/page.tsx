@@ -9,7 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Megaphone, Loader2, School as SchoolIcon } from 'lucide-react';
 import { getSchoolById } from '@/lib/schools';
-import { getAnnouncements } from '@/lib/announcements';
+import { getAnnouncements, ANNOUNCEMENTS_KEY_PREFIX } from '@/lib/announcements';
 import { getSchedule } from '@/lib/schedule';
 import { EmergencyOverlay } from '@/components/board/emergency-overlay';
 
@@ -19,29 +19,33 @@ export default function MobileSchoolPage() {
 
     const [school, setSchool] = useState<School | null>(null);
     const [schedule, setSchedule] = useState<SchedulePeriod[]>([]);
-    const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+    const [activeAnnouncements, setActiveAnnouncements] = useState<Announcement[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         if (schoolId) {
             setSchool(getSchoolById(schoolId));
             setSchedule(getSchedule(schoolId));
-            setAnnouncements(getAnnouncements(schoolId, true));
+            
+            // Get initial active announcements
+            setActiveAnnouncements(getAnnouncements(schoolId, true, true));
             setLoading(false);
+
+            // Listen for changes
+            const handleStorageChange = (event: StorageEvent) => {
+                if (event.key === `${ANNOUNCEMENTS_KEY_PREFIX}${schoolId}`) {
+                    const updatedAnnouncements = getAnnouncements(schoolId, false, true);
+                    setActiveAnnouncements(updatedAnnouncements);
+                }
+            };
+
+            window.addEventListener('storage', handleStorageChange);
+
+            return () => {
+                window.removeEventListener('storage', handleStorageChange);
+            };
         }
     }, [schoolId]);
-
-    const today = new Date();
-    const todayString = [
-      today.getFullYear(),
-      String(today.getMonth() + 1).padStart(2, '0'),
-      String(today.getDate()).padStart(2, '0'),
-    ].join('-');
-
-    const activeAnnouncements = announcements.filter(ann => {
-        if (!ann.startDate || !ann.endDate) return false;
-        return ann.isActive && ann.startDate <= todayString && ann.endDate >= todayString;
-    });
 
     if (loading || !schoolId) {
         return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
