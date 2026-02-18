@@ -14,7 +14,7 @@ export default function Home() {
       <div className="text-center mb-12">
         <h1 className="font-headline text-5xl font-bold text-primary flex items-center gap-4">
           <Building className="w-12 h-12" />
-          SchoolSync Board
+          სკოლის დაფა
         </h1>
         <p className="text-muted-foreground mt-2 text-lg">
           აირჩიეთ თქვენი სკოლა გასაგრძელებლად

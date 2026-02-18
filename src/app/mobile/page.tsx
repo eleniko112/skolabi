@@ -26,7 +26,7 @@ export default function MobilePage() {
   return (
     <div className="min-h-screen bg-background text-foreground p-4">
       <header className="text-center mb-6">
-        <h1 className="text-3xl font-bold font-headline text-primary">SchoolSync Board</h1>
+        <h1 className="text-3xl font-bold font-headline text-primary">სკოლის დაფა</h1>
         <p className="text-muted-foreground">მობილური ვერსია</p>
       </header>
 
@@ -88,7 +88,7 @@ export default function MobilePage() {
       </main>
 
       <footer className="text-center mt-8 text-xs text-muted-foreground">
-        <p>&copy; {new Date().getFullYear()} SchoolSync Board. ყველა უფლება დაცულია.</p>
+        <p>&copy; {new Date().getFullYear()} სკოლის დაფა. ყველა უფლება დაცულია.</p>
       </footer>
     </div>
   );
