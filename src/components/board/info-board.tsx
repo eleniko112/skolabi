@@ -41,13 +41,13 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
   // e.g., const { data: announcements, loading } = useFirestoreCollection(`schools/${schoolId}/announcements`);
 
   return (
-    <Card className="h-full w-full shadow-lg overflow-hidden">
+    <Card className="h-full w-full shadow-xl overflow-hidden rounded-xl">
       <CardContent className="p-0 h-full">
         <Carousel 
             className="w-full h-full"
             plugins={[
                 Autoplay({
-                  delay: 5000,
+                  delay: 7000,
                   stopOnInteraction: true,
                 }),
             ]}
@@ -65,14 +65,15 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
                         fill
                         className="object-cover"
                         data-ai-hint={image.imageHint}
+                        priority
                       />
                     )}
-                    <div className="absolute inset-0 bg-black/50" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent" />
                     <div className="absolute inset-0 flex flex-col justify-end p-8 md:p-12 text-white">
-                        <h2 className="text-3xl md:text-5xl font-bold font-headline drop-shadow-lg animate-in fade-in-5 slide-in-from-bottom-5 duration-500">
+                        <h2 className="text-4xl md:text-6xl font-bold font-headline drop-shadow-2xl animate-in fade-in-5 slide-in-from-bottom-5 duration-500">
                             {ann.title}
                         </h2>
-                        <p className="mt-4 text-lg max-w-3xl drop-shadow-md animate-in fade-in-5 slide-in-from-bottom-3 duration-500 delay-200">
+                        <p className="mt-4 text-xl max-w-4xl drop-shadow-xl animate-in fade-in-5 slide-in-from-bottom-3 duration-500 delay-200">
                             {ann.content}
                         </p>
                     </div>
@@ -81,8 +82,8 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
               );
             })}
           </CarouselContent>
-          <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 text-white bg-black/30 hover:bg-black/50 border-none" />
-          <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 text-white bg-black/30 hover:bg-black/50 border-none" />
+          <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 text-white bg-black/30 hover:bg-black/50 border-none h-12 w-12" />
+          <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 text-white bg-black/30 hover:bg-black/50 border-none h-12 w-12" />
         </Carousel>
       </CardContent>
     </Card>

@@ -7,6 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { defaultSchedule, SCHEDULE_KEY_PREFIX } from '@/lib/schedule';
+import { cn } from '@/lib/utils';
 
 type ScheduleItem = {
     time: string;
@@ -14,36 +15,37 @@ type ScheduleItem = {
 };
 
 type ProcessedLesson = {
-    label: string;
+    label:string;
     startTime: string;
     endTime: string;
+    isCurrent: boolean;
 };
 
 const LoadingState = () => (
-    <Card className="h-full shadow-lg">
+    <Card className="h-full shadow-xl rounded-xl">
         <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-primary font-headline">
+            <CardTitle className="flex items-center gap-3 text-primary font-headline text-2xl">
                 <Clock className="h-6 w-6" />
                 ზარების განრიგი
             </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-            <div className="text-center p-4 bg-primary/5 rounded-lg">
+        <CardContent className="space-y-6">
+            <div className="text-center p-6 bg-primary/5 rounded-lg border">
                 <div className="flex items-center justify-center gap-2 text-accent">
                     <Bell className="h-5 w-5" />
-                    <p className="text-sm font-semibold">იტვირთება...</p>
+                    <p className="text-base font-semibold">იტვირთება...</p>
                 </div>
-                <p className="text-5xl font-bold text-primary tracking-tighter tabular-nums">
+                <p className="text-6xl font-bold text-primary tracking-tighter tabular-nums">
                     --:--:--
                 </p>
                 <Progress value={0} className="mt-4 h-2" />
             </div>
             <Separator />
             <div className="space-y-3 max-h-[45vh] overflow-y-auto pr-2">
-                {defaultSchedule.filter(item => item.label.includes('გაკვეთილი') && !item.label.includes('დასრულდა')).map((item, index) => (
-                    <div key={index} className="flex items-center justify-between text-sm animate-pulse">
-                        <span className="text-muted-foreground bg-muted-foreground/20 h-4 w-24 rounded-md">{'\u00A0'}</span>
-                        <Badge variant="outline" className="bg-muted-foreground/20 h-5 w-32">{'\u00A0'} </Badge>
+                {[...Array(5)].map((_, index) => (
+                    <div key={index} className="flex items-center justify-between text-sm animate-pulse p-2">
+                        <span className="text-muted-foreground bg-muted h-5 w-24 rounded-md">{'\u00A0'}</span>
+                        <Badge variant="outline" className="bg-muted h-6 w-32">{'\u00A0'} </Badge>
                     </div>
                 ))}
             </div>
@@ -86,6 +88,8 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
     };
   }, [storageKey]);
 
+  const currentTimeInMinutes = now ? now.getHours() * 60 + now.getMinutes() : 0;
+
   const processedSchedule = useMemo((): ProcessedLesson[] => {
     const lessons: ProcessedLesson[] = [];
     if (!schedule || schedule.length === 0) return lessons;
@@ -95,23 +99,29 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
         if (currentItem.label.includes('გაკვეთილი') && !currentItem.label.includes('დასრულდა')) {
             const nextItem = schedule[i + 1];
             if (nextItem) {
+                const [startH, startM] = currentItem.time.split(':').map(Number);
+                const startTimeInMinutes = startH * 60 + startM;
+                const [endH, endM] = nextItem.time.split(':').map(Number);
+                const endTimeInMinutes = endH * 60 + endM;
+
+                const isCurrent = currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes < endTimeInMinutes;
+
                 lessons.push({
                     label: currentItem.label,
                     startTime: currentItem.time,
                     endTime: nextItem.time,
+                    isCurrent
                 });
             }
         }
     }
     return lessons;
-  }, [schedule]);
+  }, [schedule, currentTimeInMinutes]);
 
 
   if (!now) {
     return <LoadingState />;
   }
-
-  const currentTimeInMinutes = now.getHours() * 60 + now.getMinutes();
 
   const findNextBell = () => {
     let nextBell = null;
@@ -159,15 +169,15 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
 
   if(!nextBell || !prevBell || schedule.length === 0) {
     return (
-        <Card className="h-full shadow-lg">
+        <Card className="h-full shadow-xl rounded-xl">
             <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-primary font-headline">
+                <CardTitle className="flex items-center gap-3 text-primary font-headline text-2xl">
                     <Clock className="h-6 w-6" />
                     ზარების განრიგი
                 </CardTitle>
             </CardHeader>
             <CardContent className='pt-6'>
-                <p>განრიგი არ არის დაყენებული ან ცარიელია.</p>
+                <p className="text-muted-foreground text-center">განრიგი ცარიელია ან არასწორად არის დაკონფიგურირებული.</p>
             </CardContent>
         </Card>
     );
@@ -185,33 +195,33 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
   const nextPeriodLabel = nextBell?.label || 'დღე დასრულდა';
 
   return (
-    <Card className="h-full shadow-lg">
+    <Card className="h-full shadow-xl rounded-xl flex flex-col">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-primary font-headline">
+        <CardTitle className="flex items-center gap-3 text-primary font-headline text-2xl">
           <Clock className="h-6 w-6" />
           ზარების განრიგი
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="text-center p-4 bg-primary/5 rounded-lg">
+      <CardContent className="space-y-6 flex-grow flex flex-col">
+        <div className="text-center p-6 bg-primary/5 rounded-lg border">
             <div className="flex items-center justify-center gap-2 text-accent">
                 <Bell className="h-5 w-5" />
-                <p className="text-sm font-semibold">შემდეგი: {nextPeriodLabel}</p>
+                <p className="text-base font-semibold">შემდეგი: {nextPeriodLabel}</p>
             </div>
-            <p className="text-5xl font-bold text-primary tracking-tighter tabular-nums">
+            <p className="text-6xl font-bold text-primary tracking-tighter tabular-nums">
                 {String(minutesLeft).padStart(2, '0')}:{String(secondsLeft).padStart(2, '0')}
             </p>
             <Progress value={progress} className="mt-4 h-2" />
-            <p className="text-xs text-muted-foreground mt-2">მიმდინარე: {currentPeriodLabel}</p>
+            <p className="text-sm text-muted-foreground mt-2">მიმდინარე: {currentPeriodLabel}</p>
         </div>
 
         <Separator />
 
-        <div className="space-y-3 max-h-[45vh] overflow-y-auto pr-2">
+        <div className="space-y-2 flex-1 overflow-y-auto pr-2">
           {processedSchedule.map((item, index) => (
-            <div key={index} className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">{item.label}</span>
-                <Badge variant="outline">{item.startTime} - {item.endTime}</Badge>
+            <div key={index} className={cn("flex items-center justify-between p-3 rounded-md transition-colors", item.isCurrent && "bg-primary/10")}>
+                <span className={cn("font-medium", item.isCurrent ? "text-primary" : "text-muted-foreground")}>{item.label}</span>
+                <Badge variant={item.isCurrent ? "default" : "outline"} className="tabular-nums">{item.startTime} - {item.endTime}</Badge>
             </div>
           ))}
         </div>

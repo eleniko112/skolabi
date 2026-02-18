@@ -83,14 +83,14 @@ export function SchoolSelector({ schools }: SchoolSelectorProps) {
         {schools.map((school) => (
           <Card
             key={school.id}
-            className="w-72 cursor-pointer transition-transform transform hover:scale-105 hover:shadow-xl shadow-lg"
+            className="w-80 cursor-pointer transition-all duration-300 transform hover:scale-105 hover:shadow-2xl shadow-lg border-2 border-transparent hover:border-primary"
             onClick={() => handleSchoolSelect(school)}
           >
-            <CardHeader className="items-center text-center">
-              <div className="p-4 bg-primary/10 rounded-full mb-4">
-                <Building className="w-10 h-10 text-primary" />
+            <CardHeader className="items-center text-center p-8">
+              <div className="p-5 bg-primary/10 rounded-full mb-4">
+                <Building className="w-12 h-12 text-primary" />
               </div>
-              <CardTitle className="font-headline">{school.name}</CardTitle>
+              <CardTitle className="font-headline text-2xl">{school.name}</CardTitle>
             </CardHeader>
             <CardContent></CardContent>
           </Card>
@@ -102,7 +102,7 @@ export function SchoolSelector({ schools }: SchoolSelectorProps) {
           <DialogHeader>
             <DialogTitle className="font-headline">{selectedSchool?.name}</DialogTitle>
             <DialogDescription>
-              გთხოვთ შეიყვანოთ სკოლის პაროლი დასაფის სანახავად.
+              გთხოვთ შეიყვანოთ სკოლის პაროლი დაფის სანახავად.
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>

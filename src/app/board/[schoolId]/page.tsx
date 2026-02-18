@@ -54,16 +54,16 @@ export default function BoardPage() {
               alt={`${schoolInfo.name} Logo`}
               width={50}
               height={50}
-              className="rounded-full object-cover"
+              className="rounded-full object-cover border-2 border-primary/20"
             />
           ) : (
-             <div className="h-[50px] w-[50px] rounded-full bg-muted flex items-center justify-center">
+             <div className="h-[50px] w-[50px] rounded-full bg-muted flex items-center justify-center border-2 border-primary/20">
                 <SchoolIcon className="h-6 w-6 text-muted-foreground" />
             </div>
           )}
-          <h1 className="text-2xl font-bold font-headline text-primary">{schoolInfo.name} - დაფა</h1>
+          <h1 className="text-3xl font-bold font-headline text-primary">{schoolInfo.name}</h1>
         </div>
-        <Button asChild variant="ghost" size="icon">
+        <Button asChild variant="outline" size="icon">
           <Link href={`/board/${schoolId}/admin`}>
             <Settings className="h-6 w-6" />
             <span className="sr-only">ადმინის პანელი</span>
@@ -71,7 +71,7 @@ export default function BoardPage() {
         </Button>
       </header>
       
-      <main className="flex-grow flex flex-col md:flex-row p-4 gap-4">
+      <main className="flex-grow flex flex-col md:flex-row p-6 gap-6">
         <div className="w-full md:w-1/3 lg:w-1/4">
           <ScheduleTimer schoolId={schoolId} />
         </div>

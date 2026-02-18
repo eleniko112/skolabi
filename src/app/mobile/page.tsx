@@ -27,36 +27,36 @@ const getImage = (id: string) => PlaceHolderImages.find(img => img.id === id);
 export default function MobilePage() {
   return (
     <div className="min-h-screen bg-background text-foreground p-4">
-      <header className="text-center mb-6">
-        <h1 className="text-3xl font-bold font-headline text-primary">სკოლის დაფა</h1>
-        <p className="text-muted-foreground">მობილური ვერსია</p>
+      <header className="text-center my-6">
+        <h1 className="text-4xl font-bold font-headline text-primary">სკოლის დაფა</h1>
+        <p className="text-muted-foreground mt-1">მობილური ვერსია</p>
       </header>
 
-      <main className="space-y-6">
-        <Card className="shadow-md">
+      <main className="space-y-8">
+        <Card className="shadow-lg rounded-xl">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-primary">
+            <CardTitle className="flex items-center gap-2 text-primary font-headline">
               <Calendar className="h-5 w-5" />
               დღის განრიგი
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-3">
+            <ul className="space-y-4">
               {schedule.map((item, index) => (
-                <li key={index} className="flex items-center gap-4">
-                  <Badge variant="secondary">{item.time}</Badge>
-                  <span className="text-sm">{item.lesson}</span>
+                <li key={index} className="flex items-center justify-between">
+                  <span className="text-base font-medium">{item.lesson}</span>
+                  <Badge variant="secondary" className="text-sm">{item.time}</Badge>
                 </li>
               ))}
             </ul>
           </CardContent>
         </Card>
         
-        <Card className="shadow-md">
+        <Card className="shadow-lg rounded-xl">
             <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-primary">
+                <CardTitle className="flex items-center gap-2 text-primary font-headline">
                     <Megaphone className="h-5 w-5" />
-                    აქტიური განცხადებები
+                    განცხადებები
                 </CardTitle>
             </CardHeader>
             <CardContent>
@@ -65,20 +65,22 @@ export default function MobilePage() {
                         const image = getImage(ann.imageId);
                         return (
                             <div key={ann.id}>
-                                {index > 0 && <Separator className="my-4" />}
-                                <div className="space-y-2">
+                                {index > 0 && <Separator className="my-6" />}
+                                <div className="space-y-3">
                                     {image && (
-                                        <Image 
-                                            src={image.imageUrl}
-                                            alt={ann.title}
-                                            width={600}
-                                            height={400}
-                                            className="rounded-lg object-cover w-full aspect-video"
-                                            data-ai-hint={image.imageHint}
-                                        />
+                                        <div className="w-full overflow-hidden rounded-lg">
+                                            <Image 
+                                                src={image.imageUrl}
+                                                alt={ann.title}
+                                                width={600}
+                                                height={400}
+                                                className="object-cover w-full aspect-video"
+                                                data-ai-hint={image.imageHint}
+                                            />
+                                        </div>
                                     )}
-                                    <h3 className="font-bold text-lg font-headline">{ann.title}</h3>
-                                    <p className="text-sm text-muted-foreground">{ann.content}</p>
+                                    <h3 className="font-bold text-xl font-headline pt-2">{ann.title}</h3>
+                                    <p className="text-base text-muted-foreground">{ann.content}</p>
                                 </div>
                             </div>
                         )
@@ -89,7 +91,7 @@ export default function MobilePage() {
 
       </main>
 
-      <footer className="text-center mt-8 text-xs text-muted-foreground">
+      <footer className="text-center mt-10 text-sm text-muted-foreground">
         <p>&copy; {new Date().getFullYear()} სკოლის დაფა. ყველა უფლება დაცულია.</p>
       </footer>
     </div>

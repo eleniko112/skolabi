@@ -18,19 +18,19 @@ export default function Home() {
     // Optional: show a loading state
     return (
         <main className="flex min-h-screen flex-col items-center justify-center bg-background p-8">
-            <Building className="w-12 h-12 animate-pulse text-primary" />
+            <Building className="w-16 h-16 animate-pulse text-primary" />
         </main>
     );
   }
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-8">
-      <div className="text-center mb-12">
-        <h1 className="font-headline text-5xl font-bold text-primary flex items-center gap-4">
-          <Building className="w-12 h-12" />
+      <div className="text-center mb-16">
+        <h1 className="font-headline text-6xl font-bold text-primary tracking-tight flex items-center gap-4">
+          <Building className="w-14 h-14" />
           სკოლის დაფა
         </h1>
-        <p className="text-muted-foreground mt-2 text-lg">
+        <p className="text-muted-foreground mt-4 text-xl">
           აირჩიეთ თქვენი სკოლა გასაგრძელებლად
         </p>
       </div>
