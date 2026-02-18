@@ -59,7 +59,7 @@ export const getSchools = (initialize = false): School[] => {
 };
 
 export const getSchoolById = (id: string): School | null => {
-    const schools = getSchools();
+    const schools = getSchools(true);
     return schools.find(school => school.id === id) || null;
 }
 
