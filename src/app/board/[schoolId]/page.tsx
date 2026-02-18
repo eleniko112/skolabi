@@ -56,11 +56,11 @@ export default function BoardPage() {
         </Button>
       </header>
       
-      <main className="flex-grow p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+      <main className="flex-grow p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="md:col-span-1">
           <ScheduleTimer schoolId={schoolId} />
         </div>
-        <div className="md:col-span-2">
+        <div className="md:col-span-1">
           <InfoBoard schoolId={schoolId} />
         </div>
       </main>
