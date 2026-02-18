@@ -35,10 +35,13 @@ export default function MobileSchoolPage() {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         try {
-            const startDate = new Date(ann.startDate);
-            const endDate = new Date(ann.endDate);
-            startDate.setHours(0,0,0,0);
-            endDate.setHours(0,0,0,0);
+            // Correct way to parse YYYY-MM-DD to avoid timezone issues
+            const [startY, startM, startD] = ann.startDate.split('-').map(Number);
+            const startDate = new Date(startY, startM - 1, startD);
+
+            const [endY, endM, endD] = ann.endDate.split('-').map(Number);
+            const endDate = new Date(endY, endM - 1, endD);
+            
             return ann.isActive && startDate <= today && endDate >= today;
         } catch(e) {
             return false;
