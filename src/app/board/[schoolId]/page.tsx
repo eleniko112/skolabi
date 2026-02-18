@@ -45,7 +45,7 @@ export default function BoardPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <EmergencyOverlay />
+      <EmergencyOverlay schoolId={schoolId} />
       <header className="flex items-center justify-between p-4 border-b bg-card shadow-sm sticky top-0 z-20">
         <div className="flex items-center gap-4">
           {schoolInfo.logoUrl ? (

@@ -13,25 +13,25 @@ import { Loader2, Save, Siren } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { addHistoryLog } from '@/lib/history';
+import { getEmergencyKey } from '@/lib/emergency';
 
 interface EmergencyEditorProps {
     schoolId: string;
 }
-
-const EMERGENCY_STATE_KEY = 'emergencyState';
 
 const emergencySchema = z.object({
   active: z.boolean(),
   message: z.string().min(10, "შეტყობინება უნდა შეიცავდეს მინიმუმ 10 სიმბოლოს.").max(200, "შეტყობინება არ უნდა აღემატებოდეს 200 სიმბოლოს."),
 });
 
-type EmergencyState = z.infer<typeof emergencySchema>;
+type EmergencyFormState = z.infer<typeof emergencySchema>;
 
 export function EmergencyEditor({ schoolId }: EmergencyEditorProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const storageKey = getEmergencyKey(schoolId);
 
-  const form = useForm<EmergencyState>({
+  const form = useForm<EmergencyFormState>({
     resolver: zodResolver(emergencySchema),
     defaultValues: {
         active: false,
@@ -41,25 +41,26 @@ export function EmergencyEditor({ schoolId }: EmergencyEditorProps) {
 
   useEffect(() => {
     // Load initial state from localStorage on the client
+    if (!schoolId) return;
     try {
-      const savedState = localStorage.getItem(EMERGENCY_STATE_KEY);
+      const savedState = localStorage.getItem(storageKey);
       if (savedState) {
         form.reset(JSON.parse(savedState));
       }
     } catch (error) {
       console.error("Could not load emergency state:", error);
     }
-  }, [form]);
+  }, [form, schoolId, storageKey]);
 
   const isActive = form.watch('active');
 
-  function onSubmit(values: EmergencyState) {
+  function onSubmit(values: EmergencyFormState) {
     setIsLoading(true);
     try {
         // Save to localStorage
-        localStorage.setItem(EMERGENCY_STATE_KEY, JSON.stringify(values));
+        localStorage.setItem(storageKey, JSON.stringify(values));
         // Dispatch a storage event so other tabs (like the board page) update in real-time
-        window.dispatchEvent(new StorageEvent('storage', { key: EMERGENCY_STATE_KEY, newValue: JSON.stringify(values) }));
+        window.dispatchEvent(new StorageEvent('storage', { key: storageKey, newValue: JSON.stringify(values) }));
         
         addHistoryLog(schoolId, "საგანგებო რეჟიმის განახლება", values.active ? `გააქტიურდა შეტყობინებით: "${values.message}"` : "რეჟიმი გამოირთო");
 

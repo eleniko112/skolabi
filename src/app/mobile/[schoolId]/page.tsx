@@ -69,7 +69,7 @@ export default function MobileSchoolPage() {
 
     }, [schoolId]);
 
-    if (loading) {
+    if (loading || !schoolId) {
         return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
 
@@ -79,7 +79,7 @@ export default function MobileSchoolPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground p-4 font-body">
-      <EmergencyOverlay />
+      <EmergencyOverlay schoolId={schoolId} />
       <header className="text-center my-6 flex flex-col items-center gap-3">
         {school.logoUrl ? (
             <Image src={school.logoUrl} alt={`${school.name} Logo`} width={60} height={60} className="rounded-full object-cover"/>
