@@ -3,24 +3,40 @@ import { PlaceHolderImages } from './placeholder-images';
 
 export const ANNOUNCEMENTS_KEY_PREFIX = 'school-board-announcements-v2-';
 
-const getDefaultAnnouncements = (): Omit<Announcement, 'id' | 'createdAt' | 'isActive'>[] => [
+function getLocalIsoDate(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+const getDefaultAnnouncements = (): Omit<Announcement, 'id' | 'createdAt' | 'isActive'>[] => {
+    const today = new Date();
+
+    const endDate1 = new Date(today);
+    endDate1.setDate(today.getDate() + 7);
+    
+    const endDate2 = new Date(today);
+    endDate2.setDate(today.getDate() + 10);
+    
+    return [
     {
       title: 'ტრენინგი AI-ზე და ჩვენს მიდგომაზე',
       content: 'დღეს, 15:00 საათზე, სააქტო დარბაზში გაიმართება საინტერესო ტრენინგი ხელოვნურ ინტელექტზე. განვიხილავთ თანამედროვე ტექნოლოგიებს და მათ გამოყენებას განათლებაში. დასწრება თავისუფალია.',
       imageUrl: PlaceHolderImages.find(i => i.id === 'ai-training')?.imageUrl || '',
       imageHint: 'ai technology',
-      startDate: new Date().toISOString().split('T')[0],
-      endDate: new Date(new Date().setDate(new Date().getDate() + 7)).toISOString().split('T')[0],
+      startDate: getLocalIsoDate(today),
+      endDate: getLocalIsoDate(endDate1),
     },
     {
       title: 'სასკოლო სპორტული დღე',
       content: 'მომავალ შაბათს, სკოლის სტადიონზე ჩატარდება ყოველწლიური სპორტული დღე. გელოდებით ყველას, მონაწილეობის მისაღებად და თქვენი კლასელების გასამხნევებლად!',
       imageUrl: PlaceHolderImages.find(i => i.id === 'sports-day')?.imageUrl || '',
       imageHint: 'students sports',
-      startDate: new Date().toISOString().split('T')[0],
-      endDate: new Date(new Date().setDate(new Date().getDate() + 10)).toISOString().split('T')[0],
+      startDate: getLocalIsoDate(today),
+      endDate: getLocalIsoDate(endDate2),
     },
-];
+]};
 
 
 const getStorage = () => {

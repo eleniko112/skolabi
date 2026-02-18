@@ -37,7 +37,13 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
     }, [schoolId]);
 
 
-    const todayString = new Date().toISOString().split('T')[0];
+    const today = new Date();
+    const todayString = [
+      today.getFullYear(),
+      String(today.getMonth() + 1).padStart(2, '0'),
+      String(today.getDate()).padStart(2, '0'),
+    ].join('-');
+    
     const activeAnnouncements = announcements.filter(ann => {
         if (!ann.startDate || !ann.endDate) return false;
         return ann.isActive && ann.startDate <= todayString && ann.endDate >= todayString;
