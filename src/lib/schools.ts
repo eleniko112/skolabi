@@ -7,20 +7,23 @@ import { getSettings } from './settings';
 
 const SCHOOLS_KEY = 'school-board-schools';
 
-const defaultSchools: Omit<School, 'id'>[] = [
+const defaultSchools: School[] = [
   { 
+    id: '1-sajaro-skola',
     name: '1-ლი საჯარო სკოლა', 
     password: '1111', 
     adminPin: '1234',
     logoUrl: PlaceHolderImages.find(i => i.id === 'school-logo-1')?.imageUrl || '',
   },
   { 
+    id: '7-sajaro-skola',
     name: 'მე-7 საჯარო სკოლა', 
     password: '7777',
     adminPin: '1234',
     logoUrl: PlaceHolderImages.find(i => i.id === 'school-logo-7')?.imageUrl || '',
   },
   { 
+    id: '3-sajaro-skola',
     name: 'მე-3 საჯარო სკოლა', 
     password: '3333',
     adminPin: '1234',
@@ -40,10 +43,7 @@ export const getSchools = (initialize = false): School[] => {
     let schools = JSON.parse(storage.getItem(SCHOOLS_KEY) || 'null') as School[] | null;
 
     if ((!schools || schools.length === 0) && initialize) {
-        schools = defaultSchools.map((school, index) => ({
-            ...school,
-            id: `${Date.now()}-${index}`,
-        }));
+        schools = defaultSchools;
         storage.setItem(SCHOOLS_KEY, JSON.stringify(schools));
         
         // Initialize data for each default school
