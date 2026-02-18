@@ -27,9 +27,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { KeyRound, Loader2, ArrowLeft, ShieldCheck, Megaphone, Calendar, Palette, Settings, History, CloudLightning } from 'lucide-react';
 import { AnnouncementEditor } from './announcement-editor';
-import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
+import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '@/components/ui/card';
 import { EmergencyEditor } from './emergency-editor';
 import { ScheduleEditor } from './schedule-editor';
+import { AppearanceEditor } from './appearance-editor';
 
 interface AdminDashboardProps {
   schoolId: string;
@@ -141,13 +142,29 @@ export function AdminDashboard({ schoolId, schoolName, adminPin }: AdminDashboar
           <EmergencyEditor schoolId={schoolId} />
         </TabsContent>
         <TabsContent value="appearance" className="mt-6">
-          <Card><CardHeader><CardTitle>დაფის გარეგნობის რედაქტორი</CardTitle></CardHeader><CardContent><p>ეს სექცია მალე დაემატება.</p></CardContent></Card>
+          <AppearanceEditor schoolId={schoolId} />
         </TabsContent>
         <TabsContent value="history" className="mt-6">
-          <Card><CardHeader><CardTitle>ცვლილებების ისტორია</CardTitle></CardHeader><CardContent><p>ეს სექცია მალე დაემატება.</p></CardContent></Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><History className="h-5 w-5"/> ცვლილებების ისტორია</CardTitle>
+                    <CardDescription>განხორციელებული ცვლილებების სრული ჩანაწერი.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-muted-foreground">ეს ფუნქციონალი დამუშავების პროცესშია და მალე დაემატება.</p>
+                </CardContent>
+            </Card>
         </TabsContent>
         <TabsContent value="settings" className="mt-6">
-          <Card><CardHeader><CardTitle>ზოგადი პარამეტრები</CardTitle></CardHeader><CardContent><p>ეს სექცია მალე დაემატება.</p></CardContent></Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Settings className="h-5 w-5"/> ზოგადი პარამეტრები</CardTitle>
+                    <CardDescription>სკოლის დაფის ზოგადი პარამეტრების მართვა.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-muted-foreground">ეს ფუნქციონალი დამუშავების პროცესშია და მალე დაემატება. აქ შეძლებთ სკოლის სახელის, პაროლის და სხვა მონაცემების ცვლილებას.</p>
+                </CardContent>
+            </Card>
         </TabsContent>
       </Tabs>
     </div>
