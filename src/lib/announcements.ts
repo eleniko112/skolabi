@@ -1,7 +1,8 @@
 import { Announcement } from './types';
 import { PlaceHolderImages } from './placeholder-images';
 
-export const ANNOUNCEMENTS_KEY_PREFIX = 'school-board-announcements-v5-';
+// Version bump to guarantee a data reset on the client.
+export const ANNOUNCEMENTS_KEY_PREFIX = 'school-board-announcements-v7-';
 
 function getLocalIsoDate(date: Date): string {
     const year = date.getFullYear();
@@ -40,25 +41,39 @@ const getStorage = () => {
     return window.localStorage;
 }
 
+const filterActiveAnnouncements = (announcements: Announcement[]): Announcement[] => {
+    if (!announcements) return [];
+    const todayString = getLocalIsoDate(new Date());
+
+    return announcements.filter(ann => {
+        if (!ann.startDate || !ann.endDate) return false;
+        return ann.isActive && ann.startDate <= todayString && ann.endDate >= todayString;
+    });
+};
+
 export const getAnnouncements = (schoolId: string, initialize = false): Announcement[] => {
     const storage = getStorage();
     if (!storage) return [];
     
     const key = `${ANNOUNCEMENTS_KEY_PREFIX}${schoolId}`;
-    let announcements = JSON.parse(storage.getItem(key) || 'null') as Announcement[] | null;
+    let allAnnouncements = JSON.parse(storage.getItem(key) || 'null') as Announcement[] | null;
 
-    if ((!announcements || announcements.length === 0) && initialize) {
+    // Self-healing mechanism: If we are in an initialization context and the loaded data
+    // results in NO active announcements, we assume the data is stale/corrupted and reset it.
+    const activeAnnouncements = allAnnouncements ? filterActiveAnnouncements(allAnnouncements) : [];
+    
+    if (initialize && (!allAnnouncements || activeAnnouncements.length === 0)) {
         const defaultData = getDefaultAnnouncements();
-        announcements = defaultData.map((ann, index) => ({
+        allAnnouncements = defaultData.map((ann, index) => ({
             ...ann,
             id: `${Date.now()}-${index}`,
             createdAt: new Date().toISOString(),
             isActive: true,
         }));
-        storage.setItem(key, JSON.stringify(announcements));
+        storage.setItem(key, JSON.stringify(allAnnouncements));
     }
     
-    return announcements || [];
+    return allAnnouncements || [];
 };
 
 export const addAnnouncement = (schoolId: string, announcementData: Omit<Announcement, 'id' | 'createdAt' | 'isActive'>) => {
