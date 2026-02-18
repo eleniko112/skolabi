@@ -27,6 +27,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { KeyRound, Loader2, ArrowLeft, ShieldCheck, Megaphone, Calendar, Palette, Settings, History, CloudLightning } from 'lucide-react';
 import { AnnouncementEditor } from './announcement-editor';
+import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 
 interface AdminDashboardProps {
   schoolId: string;
