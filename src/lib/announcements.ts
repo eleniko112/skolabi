@@ -1,7 +1,7 @@
 import { Announcement } from './types';
 import { PlaceHolderImages } from './placeholder-images';
 
-export const ANNOUNCEMENTS_KEY_PREFIX = 'school-board-announcements-v3-';
+export const ANNOUNCEMENTS_KEY_PREFIX = 'school-board-announcements-v5-';
 
 function getLocalIsoDate(date: Date): string {
     const year = date.getFullYear();
@@ -12,11 +12,8 @@ function getLocalIsoDate(date: Date): string {
 
 const getDefaultAnnouncements = (): Omit<Announcement, 'id' | 'createdAt' | 'isActive'>[] => {
     const startDate = new Date();
-    const endDate = new Date();
-    endDate.setFullYear(endDate.getFullYear() + 1);
-
     const startDateString = getLocalIsoDate(startDate);
-    const endDateString = getLocalIsoDate(endDate);
+    const endDateString = '2099-12-31'; // Far future date to prevent expiry issues
     
     return [
     {
