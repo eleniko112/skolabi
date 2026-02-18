@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -11,7 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, PlusCircle, Wand2, BookText, Trash2, CalendarIcon } from 'lucide-react';
+import { Loader2, PlusCircle, BookText, Trash2, CalendarIcon } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -21,7 +20,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from '../ui/badge';
-import { generateAnnouncement } from '@/ai/flows/generate-announcement';
 import { summarizeAnnouncement } from '@/ai/flows/summarize-announcement';
 import { Switch } from '@/components/ui/switch';
 import { getAnnouncements, addAnnouncement, deleteAnnouncement, updateAnnouncement, ANNOUNCEMENTS_KEY_PREFIX } from '@/lib/announcements';
@@ -81,24 +79,6 @@ export function AnnouncementEditor({ schoolId }: AnnouncementEditorProps) {
       endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     }
   });
-
-  const handleGenerate = async () => {
-    const title = form.getValues("title");
-    if (!title) {
-        toast({ variant: 'destructive', title: 'სათაური ცარიელია', description: 'გთხოვთ, შეიყვანეთ იდეა სათაურის ველში გენერაციისთვის.' });
-        return;
-    }
-    setIsGenerating(true);
-    try {
-        const result = await generateAnnouncement({ promptText: title });
-        form.setValue("content", result.announcementText);
-        toast({ title: 'შინაარსი დაგენერირდა', description: 'AI-მ შექმნა განცხადების ტექსტი თქვენი იდეის საფუძველზე.' });
-    } catch(e) {
-        toast({ variant: 'destructive', title: 'გენერაცია წარუმატებელია', description: 'დაფიქსირდა შეცდომა.' });
-    } finally {
-        setIsGenerating(false);
-    }
-  }
 
   const handleSummarize = async () => {
     const content = form.getValues("content");
@@ -199,7 +179,7 @@ export function AnnouncementEditor({ schoolId }: AnnouncementEditorProps) {
                 name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>სათაური / იდეა გენერაციისთვის</FormLabel>
+                    <FormLabel>სათაური</FormLabel>
                     <FormControl>
                       <Input placeholder="მაგ: სპორტული შეჯიბრი ფეხბურთში" {...field} />
                     </FormControl>
@@ -221,10 +201,6 @@ export function AnnouncementEditor({ schoolId }: AnnouncementEditorProps) {
                 )}
               />
               <div className="flex gap-2">
-                <Button type="button" variant="outline" size="sm" onClick={handleGenerate} disabled={isGenerating}>
-                    {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wand2 className="mr-2 h-4 w-4"/>}
-                    გენერაცია
-                </Button>
                 <Button type="button" variant="outline" size="sm" onClick={handleSummarize} disabled={isGenerating}>
                     {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <BookText className="mr-2 h-4 w-4"/>}
                     შეჯამება
