@@ -45,7 +45,7 @@ export function useLocalStorage<T>(key: string, initialValue: T | (() => T)) {
 
   useEffect(() => {
     setStoredValue(readValue());
-  }, [readValue]);
+  }, [key, readValue]);
 
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
