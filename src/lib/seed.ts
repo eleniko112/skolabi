@@ -83,13 +83,12 @@ const defaultEmergencyState = {
 
 export async function seedInitialData(db: Firestore): Promise<void> {
   const batch = writeBatch(db);
-  const schoolIds = ['1-sajaro-skola', 'me-7-sajaro-skola', 'me-3-sajaro-skola'];
 
   // 1. Seed Schools
-  for (const [index, schoolData] of defaultSchools.entries()) {
-    const schoolId = schoolIds[index];
-    const schoolRef = doc(db, 'schools', schoolId);
+  for (const schoolData of defaultSchools) {
+    const schoolRef = doc(collection(db, 'schools')); // Auto-generate ID
     batch.set(schoolRef, schoolData);
+    const schoolId = schoolRef.id;
 
     // 2. For each school, seed subcollections
     // Seed Announcements for each school
