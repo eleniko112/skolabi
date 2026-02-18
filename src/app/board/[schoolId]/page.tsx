@@ -1,45 +1,61 @@
-// This page will be built out to show the full board.
-// For now, it's a placeholder to confirm routing works.
+"use client"; // Needs to be client component for hooks
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { InfoBoard } from '@/components/board/info-board';
 import { ScheduleTimer } from '@/components/board/schedule-timer';
 import { QRCodeDisplay } from '@/components/board/qr-code-display';
 import Image from 'next/image';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Settings } from 'lucide-react';
+import { Settings, School as SchoolIcon, Loader2 } from 'lucide-react';
 import { EmergencyOverlay } from '@/components/board/emergency-overlay';
+import { getSchoolById } from '@/lib/schools';
+import { School } from '@/lib/types';
 
-// Dummy data, will be replaced by Firestore
-const schoolData = {
-  '1': { name: '1-ლი საჯარო სკოლა', logoId: 'school-logo-1' },
-  '7': { name: 'მე-7 საჯარო სკოლა', logoId: 'school-logo-7' },
-  '3': { name: 'მე-3 საჯარო სკოლა', logoId: 'school-logo-3' },
-};
-
-const getLogo = (id: string) => {
-    const logoId = schoolData[id as keyof typeof schoolData]?.logoId;
-    return PlaceHolderImages.find(img => img.id === logoId) || PlaceHolderImages.find(img => img.id === 'school-logo-1');
-}
 
 export default function BoardPage({ params }: { params: { schoolId: string } }) {
-  const schoolInfo = schoolData[params.schoolId as keyof typeof schoolData] || { name: 'უცნობი სკოლა' };
-  const logo = getLogo(params.schoolId);
+  const [schoolInfo, setSchoolInfo] = useState<School | null | undefined>(undefined);
+
+  useEffect(() => {
+    const school = getSchoolById(params.schoolId);
+    setSchoolInfo(school);
+    
+    const handleStorageChange = (event: StorageEvent) => {
+        if (event.key === 'schools-data') {
+           const updatedSchool = getSchoolById(params.schoolId);
+           setSchoolInfo(updatedSchool);
+        }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [params.schoolId]);
+
+  if (schoolInfo === undefined) {
+    return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
+
+  if (schoolInfo === null) {
+      return <div className="flex min-h-screen items-center justify-center"><p>School not found.</p></div>;
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <EmergencyOverlay />
       <header className="flex items-center justify-between p-4 border-b bg-card shadow-sm sticky top-0 z-20">
         <div className="flex items-center gap-4">
-          {logo && (
+          {schoolInfo.logoUrl ? (
             <Image
-              src={logo.imageUrl}
+              src={schoolInfo.logoUrl}
               alt={`${schoolInfo.name} Logo`}
               width={50}
               height={50}
-              className="rounded-full"
-              data-ai-hint={logo.imageHint}
+              className="rounded-full object-cover"
             />
+          ) : (
+             <div className="h-[50px] w-[50px] rounded-full bg-muted flex items-center justify-center">
+                <SchoolIcon className="h-6 w-6 text-muted-foreground" />
+            </div>
           )}
           <h1 className="text-2xl font-bold font-headline text-primary">{schoolInfo.name} - დაფა</h1>
         </div>

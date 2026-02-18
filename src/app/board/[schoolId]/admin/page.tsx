@@ -1,21 +1,46 @@
-// This page will contain the admin panel for a specific school.
-// It will be protected by a PIN.
-// For now, it's a simple placeholder.
+"use client"; // Make it a client component
 
+import { useState, useEffect } from 'react';
 import { AdminDashboard } from '@/components/admin/admin-dashboard';
+import { getSchoolById } from '@/lib/schools';
+import { School } from '@/lib/types';
+import { Loader2 } from 'lucide-react';
 
-const schoolData = {
-  '1': { name: '1-ლი საჯარო სკოლა', adminPin: '1234' },
-  '7': { name: 'მე-7 საჯარო სკოლა', adminPin: '1234' },
-  '3': { name: 'მე-3 საჯარო სკოლა', adminPin: '1234' },
-};
 
 export default function AdminPage({ params }: { params: { schoolId: string } }) {
-  const schoolInfo = schoolData[params.schoolId as keyof typeof schoolData] || { name: 'უცნობი სკოლა', adminPin: '0000' };
+  const [schoolInfo, setSchoolInfo] = useState<School | null | undefined>(undefined);
+
+  useEffect(() => {
+    const school = getSchoolById(params.schoolId);
+    setSchoolInfo(school);
+
+    const handleStorageChange = (event: StorageEvent) => {
+        if (event.key === 'schools-data') {
+           const updatedSchool = getSchoolById(params.schoolId);
+           setSchoolInfo(updatedSchool);
+        }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+
+  }, [params.schoolId]);
+
+  if (schoolInfo === undefined) {
+    return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
+  
+  if (schoolInfo === null) {
+      return <div className="flex min-h-screen items-center justify-center"><p>School not found.</p></div>;
+  }
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
-      <AdminDashboard schoolId={params.schoolId} schoolName={schoolInfo.name} adminPin={schoolInfo.adminPin} />
+      <AdminDashboard 
+        schoolId={params.schoolId} 
+        schoolName={schoolInfo.name} 
+        adminPin={schoolInfo.adminPin || '0000'} 
+      />
     </div>
   );
 }

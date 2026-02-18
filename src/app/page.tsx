@@ -1,14 +1,28 @@
+"use client"; // Make it a client component to use hooks
+
+import { useState, useEffect } from 'react';
 import { SchoolSelector } from '@/components/school-selector';
 import { School } from '@/lib/types';
+import { getSchools } from '@/lib/schools';
 import { Building } from 'lucide-react';
 
-const schools: School[] = [
-  { id: '1', name: '1-ლი საჯარო სკოლა', password: '1111' },
-  { id: '7', name: 'მე-7 საჯარო სკოლა', password: '7777' },
-  { id: '3', name: 'მე-3 საჯარო სკოლა', password: '3333' },
-];
-
 export default function Home() {
+  const [schools, setSchools] = useState<School[]>([]);
+
+  useEffect(() => {
+    // Load schools from localStorage on the client
+    setSchools(getSchools());
+  }, []);
+
+  if (schools.length === 0) {
+    // Optional: show a loading state
+    return (
+        <main className="flex min-h-screen flex-col items-center justify-center bg-background p-8">
+            <Building className="w-12 h-12 animate-pulse text-primary" />
+        </main>
+    );
+  }
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-8">
       <div className="text-center mb-12">
