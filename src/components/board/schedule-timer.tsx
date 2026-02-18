@@ -20,10 +20,11 @@ const schedule = [
 ];
 
 export function ScheduleTimer({ schoolId }: { schoolId: string }) {
-  const [now, setNow] = useState(new Date());
+  const [now, setNow] = useState<Date>();
   const [ntpWarning, setNtpWarning] = useState(false);
 
   useEffect(() => {
+    setNow(new Date());
     const timer = setInterval(() => setNow(new Date()), 1000);
     // Simulate NTP sync check failure
     const ntpCheck = setTimeout(() => setNtpWarning(true), 15000); 
@@ -33,6 +34,40 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
         clearTimeout(ntpCheck);
     };
   }, []);
+
+  if (!now) {
+    return (
+        <Card className="h-full shadow-lg">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-primary font-headline">
+                    <Clock className="h-6 w-6" />
+                    ზარების განრიგი
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 animate-pulse">
+                <div className="text-center p-4 bg-primary/5 rounded-lg">
+                    <div className="flex items-center justify-center gap-2 text-accent">
+                        <Bell className="h-5 w-5" />
+                        <p className="text-sm font-semibold">იტვირთება...</p>
+                    </div>
+                    <p className="text-5xl font-bold text-primary tracking-tighter tabular-nums">
+                        --:--
+                    </p>
+                    <Progress value={0} className="mt-4 h-2" />
+                </div>
+                <Separator />
+                <div className="space-y-3 max-h-[45vh] overflow-y-auto pr-2">
+                    {schedule.map((item, index) => (
+                        <div key={index} className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">{item.label}</span>
+                            <Badge variant="outline">{item.time}</Badge>
+                        </div>
+                    ))}
+                </div>
+            </CardContent>
+        </Card>
+    );
+  }
 
   const findNextBell = () => {
     const currentTime = now.getHours() * 60 + now.getMinutes();
