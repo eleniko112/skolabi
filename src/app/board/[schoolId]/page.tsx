@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { InfoBoard } from '@/components/board/info-board';
 import { ScheduleTimer } from '@/components/board/schedule-timer';
@@ -13,25 +14,28 @@ import { getSchoolById } from '@/lib/schools';
 import { School } from '@/lib/types';
 
 
-export default function BoardPage({ params }: { params: { schoolId: string } }) {
+export default function BoardPage() {
+  const params = useParams<{ schoolId: string }>();
+  const schoolId = params.schoolId;
   const [schoolInfo, setSchoolInfo] = useState<School | null | undefined>(undefined);
 
   useEffect(() => {
-    const school = getSchoolById(params.schoolId);
+    if (!schoolId) return;
+    const school = getSchoolById(schoolId);
     setSchoolInfo(school);
     
     const handleStorageChange = (event: StorageEvent) => {
         if (event.key === 'schools-data') {
-           const updatedSchool = getSchoolById(params.schoolId);
+           const updatedSchool = getSchoolById(schoolId);
            setSchoolInfo(updatedSchool);
         }
     };
 
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, [params.schoolId]);
+  }, [schoolId]);
 
-  if (schoolInfo === undefined) {
+  if (schoolInfo === undefined || !schoolId) {
     return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
@@ -60,7 +64,7 @@ export default function BoardPage({ params }: { params: { schoolId: string } }) 
           <h1 className="text-2xl font-bold font-headline text-primary">{schoolInfo.name} - დაფა</h1>
         </div>
         <Button asChild variant="ghost" size="icon">
-          <Link href={`/board/${params.schoolId}/admin`}>
+          <Link href={`/board/${schoolId}/admin`}>
             <Settings className="h-6 w-6" />
             <span className="sr-only">ადმინის პანელი</span>
           </Link>
@@ -69,10 +73,10 @@ export default function BoardPage({ params }: { params: { schoolId: string } }) 
       
       <main className="flex-grow flex flex-col md:flex-row p-4 gap-4">
         <div className="w-full md:w-1/3 lg:w-1/4">
-          <ScheduleTimer schoolId={params.schoolId} />
+          <ScheduleTimer schoolId={schoolId} />
         </div>
         <div className="w-full md:w-2/3 lg:w-3/4">
-          <InfoBoard schoolId={params.schoolId} />
+          <InfoBoard schoolId={schoolId} />
         </div>
       </main>
       
