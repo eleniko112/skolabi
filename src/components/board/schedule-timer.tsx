@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Bell, Clock, WifiOff } from 'lucide-react';
+import { Bell, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
@@ -43,7 +43,7 @@ const LoadingState = () => (
                 {defaultSchedule.filter(item => item.label.includes('გაკვეთილი') && !item.label.includes('დასრულდა')).map((item, index) => (
                     <div key={index} className="flex items-center justify-between text-sm animate-pulse">
                         <span className="text-muted-foreground bg-muted-foreground/20 h-4 w-24 rounded-md">{'\u00A0'}</span>
-                        <Badge variant="outline" className="bg-muted-foreground/20 h-5 w-32">{'\u00A0'}</Badge>
+                        <Badge variant="outline" className="bg-muted-foreground/20 h-5 w-32">{'\u00A0'} </Badge>
                     </div>
                 ))}
             </div>
@@ -53,7 +53,6 @@ const LoadingState = () => (
 
 export function ScheduleTimer({ schoolId }: { schoolId: string }) {
   const [now, setNow] = useState<Date | undefined>();
-  const [ntpWarning, setNtpWarning] = useState(false);
   const [schedule, setSchedule] = useState<ScheduleItem[]>(defaultSchedule);
   const storageKey = `${SCHEDULE_KEY_PREFIX}${schoolId}`;
 
@@ -71,7 +70,6 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
     updateSchedule();
 
     const timer = setInterval(() => setNow(new Date()), 1000);
-    const ntpCheck = setTimeout(() => setNtpWarning(true), 15000);
     setNow(new Date());
 
     const handleStorageChange = (event: StorageEvent) => {
@@ -84,7 +82,6 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
 
     return () => {
       clearInterval(timer);
-      clearTimeout(ntpCheck);
       window.removeEventListener('storage', handleStorageChange);
     };
   }, [storageKey]);
@@ -194,12 +191,6 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
           <Clock className="h-6 w-6" />
           ზარების განრიგი
         </CardTitle>
-        {ntpWarning && (
-            <div className="flex items-center gap-2 text-orange-500 text-xs pt-2">
-                <WifiOff className="h-4 w-4"/>
-                <span>სერვერთან დროის სინქრონიზაცია ვერ ხერხდება</span>
-            </div>
-        )}
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="text-center p-4 bg-primary/5 rounded-lg">
