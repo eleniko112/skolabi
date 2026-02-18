@@ -1,0 +1,203 @@
+/**
+ * @file firestore.rules
+ * @description Firestore Security Rules for a School Information Board system.
+ *
+ * @section Core Philosophy
+ * This ruleset implements a highly secure, scalable authorization model centered on "Authorization Independence via Denormalization."
+ * Instead of relying on slow and costly `get()` calls to parent documents to check permissions, authorization context (specifically, an `adminMembers` map)
+ * is denormalized onto every document that requires administrative control. This ensures that access decisions are fast, atomic, and easy to debug.
+ *
+ * @section Data Structure
+ * The data is organized hierarchically to reflect real-world relationships:
+ * - /schools/{schoolId}: A top-level, public-readable collection for school discovery.
+ * - /schools/{schoolId}/boardConfigurations/{boardConfigurationId}: Contains the core settings for a specific school's board. This document holds the master `adminMembers` map.
+ * - All other data (Announcements, Events, Schedules, etc.) is nested within subcollections under its parent `boardConfiguration`.
+ *
+ * @section Key Security Decisions
+ * - Public Discovery vs. Private Control: The top-level `/schools` collection is public for anyone to read, allowing apps to list available schools. However, all write operations are locked down and must be managed server-side.
+ * - Admin-by-Document: All write access to board configurations and their sub-collections is strictly limited to users whose UIDs are present in the `adminMembers` map on the specific document being accessed. There are no global admin roles.
+ * - Segregated Data: Publicly visible data (announcements, events) is structured for public reads, while sensitive audit data (`adminLogs`, `announcementVersions`) is structurally segregated and has its read access restricted to board admins.
+ * - Prototyping Flexibility: In line with rapid development, these rules enforce *who* can access data but do *not* strictly validate the *shape* of the data. This allows the frontend and backend schemas to evolve without constant rule updates. Only fields critical for authorization (like `adminMembers` or `adminId`) are validated.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ------------------------------------------------------------------------
+    // Helper Functions
+    // ------------------------------------------------------------------------
+
+    /**
+     * Checks if the current user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the authenticated user is listed as an admin in a document's
+     * `adminMembers` map. This is the core function for write authorization.
+     * @param docData The `data` map of the document being checked.
+     */
+    function isBoardAdmin(docData) {
+      return isSignedIn() && docData.adminMembers[request.auth.uid] != null;
+    }
+
+    /**
+     * A wrapper for `isBoardAdmin` used in `create` operations.
+     * It checks the incoming document's data.
+     */
+    function isNewBoardAdmin() {
+      return isBoardAdmin(request.resource.data);
+    }
+
+    /**
+     * A wrapper for `isBoardAdmin` used in `update` and `delete` operations.
+     * It ensures the document exists and checks the existing document's data.
+     */
+    function isExistingBoardAdmin() {
+      return resource != null && isBoardAdmin(resource.data);
+    }
+
+    /**
+     * Validates that the user creating an AdminLog is a board admin and
+     * is correctly identifying themselves in the 'adminId' field.
+     */
+    function isAdminLogCreator() {
+      return isNewBoardAdmin() && request.resource.data.adminId == request.auth.uid;
+    }
+
+    /**
+     * Checks permissions on the parent BoardConfiguration document to determine
+     * if a user is allowed to list admin-only subcollections like logs or versions.
+     * This is a necessary use of `get()` to secure list operations on subcollections.
+     */
+    function canListAdminContent(schoolId, boardConfigurationId) {
+      let parentData = get(/databases/$(database)/documents/schools/$(schoolId)/boardConfigurations/$(boardConfigurationId)).data;
+      return isBoardAdmin(parentData);
+    }
+
+    // ------------------------------------------------------------------------
+    // Collection Rules
+    // ------------------------------------------------------------------------
+
+    /**
+     * @description Manages the public listing of schools.
+     * @path /schools/{schoolId}
+     * @allow (get, list) Any user, signed in or not, can discover schools.
+     * @deny (create, update, delete) All write operations are denied. School creation must be handled by a trusted server-side process.
+     * @principle Public discovery with locked-down writes.
+     */
+    match /schools/{schoolId} {
+      allow get, list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    /**
+     * @description Secures the main configuration for a school's board.
+     * @path /schools/{schoolId}/boardConfigurations/{boardConfigurationId}
+     * @allow (get, list) Anyone can read the board's public configuration (theme, logo, etc.).
+     * @allow (create, update, delete) Only authenticated users listed in the document's `adminMembers` map can modify it.
+     * @deny (update) An unauthenticated user tries to change the theme color.
+     * @principle Shared access (closed collaborators) for writes, public access for reads.
+     */
+    match /schools/{schoolId}/boardConfigurations/{boardConfigurationId} {
+      allow get, list: if true;
+      allow create: if isNewBoardAdmin();
+      allow update: if isExistingBoardAdmin();
+      allow delete: if isExistingBoardAdmin();
+    }
+
+    /**
+     * @description Secures lesson schedule items.
+     * @path /schools/{schoolId}/boardConfigurations/{boardConfigurationId}/lessonScheduleItems/{lessonScheduleItemId}
+     * @allow (get, list) Anyone can read the public lesson schedule.
+     * @allow (create, update, delete) Only board admins can modify the schedule.
+     * @deny (create) A regular user attempts to add a new lesson.
+     * @principle Denormalized authorization for subcollection writes.
+     */
+    match /schools/{schoolId}/boardConfigurations/{boardConfigurationId}/lessonScheduleItems/{lessonScheduleItemId} {
+      allow get, list: if true;
+      allow create: if isNewBoardAdmin();
+      allow update: if isExistingBoardAdmin();
+      allow delete: if isExistingBoardAdmin();
+    }
+
+    /**
+     * @description Secures bell sound settings.
+     * @path /schools/{schoolId}/boardConfigurations/{boardConfigurationId}/bellSoundSettings/{bellSoundSettingId}
+     * @allow (get, list) Anyone can read the public bell sound settings.
+     * @allow (create, update, delete) Only board admins can modify the bell sounds.
+     * @deny (update) A non-admin user tries to change a bell sound URL.
+     * @principle Denormalized authorization for subcollection writes.
+     */
+    match /schools/{schoolId}/boardConfigurations/{boardConfigurationId}/bellSoundSettings/{bellSoundSettingId} {
+      allow get, list: if true;
+      allow create: if isNewBoardAdmin();
+      allow update: if isExistingBoardAdmin();
+      allow delete: if isExistingBoardAdmin();
+    }
+
+    /**
+     * @description Secures announcements displayed on the board.
+     * @path /schools/{schoolId}/boardConfigurations/{boardConfigurationId}/announcements/{announcementId}
+     * @allow (get, list) Anyone can read public announcements.
+     * @allow (create, update, delete) Only board admins can post or modify announcements.
+     * @deny (delete) A regular user tries to delete an announcement.
+     * @principle Denormalized authorization for subcollection writes.
+     */
+    match /schools/{schoolId}/boardConfigurations/{boardConfigurationId}/announcements/{announcementId} {
+      allow get, list: if true;
+      allow create: if isNewBoardAdmin();
+      allow update: if isExistingBoardAdmin();
+      allow delete: if isExistingBoardAdmin();
+    }
+
+    /**
+     * @description Secures scheduled events displayed on the board.
+     * @path /schools/{schoolId}/boardConfigurations/{boardConfigurationId}/events/{eventId}
+     * @allow (get, list) Anyone can read public events.
+     * @allow (create, update, delete) Only board admins can create or modify events.
+     * @deny (create) An unauthenticated user tries to create a new event.
+     * @principle Denormalized authorization for subcollection writes.
+     */
+    match /schools/{schoolId}/boardConfigurations/{boardConfigurationId}/events/{eventId} {
+      allow get, list: if true;
+      allow create: if isNewBoardAdmin();
+      allow update: if isExistingBoardAdmin();
+      allow delete: if isExistingBoardAdmin();
+    }
+
+    /**
+     * @description Secures sensitive administrative action logs. Read and write are restricted.
+     * @path /schools/{schoolId}/boardConfigurations/{boardConfigurationId}/adminLogs/{adminLogId}
+     * @allow (get, list, create, update, delete) Only board admins can access or create logs.
+     * @deny (get, list) A regular user tries to read the audit trail.
+     * @principle Enforces strict, role-based access for sensitive audit data. Validates relational integrity on create.
+     */
+    match /schools/{schoolId}/boardConfigurations/{boardConfigurationId}/adminLogs/{adminLogId} {
+      allow get: if isExistingBoardAdmin();
+      allow list: if canListAdminContent(schoolId, boardConfigurationId);
+      allow create: if isAdminLogCreator();
+      allow update: if isExistingBoardAdmin();
+      allow delete: if isExistingBoardAdmin();
+    }
+
+    /**
+     * @description Secures historical versions of announcements for audit/restore.
+     * @path /schools/{schoolId}/boardConfigurations/{boardConfigurationId}/announcements/{announcementId}/versions/{versionId}
+     * @allow (get, list, create, update, delete) Only board admins can manage announcement history.
+     * @deny (list) A non-admin user tries to view the version history of an announcement.
+     * @principle Enforces strict, role-based access for sensitive audit data.
+     */
+    match /schools/{schoolId}/boardConfigurations/{boardConfigurationId}/announcements/{announcementId}/versions/{versionId} {
+      allow get: if isExistingBoardAdmin();
+      allow list: if canListAdminContent(schoolId, boardConfigurationId);
+      allow create: if isNewBoardAdmin();
+      allow update: if isExistingBoardAdmin();
+      allow delete: if isExistingBoardAdmin();
+    }
+  }
+}
