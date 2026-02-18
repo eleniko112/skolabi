@@ -1,7 +1,7 @@
 import { Announcement } from './types';
 import { PlaceHolderImages } from './placeholder-images';
 
-export const ANNOUNCEMENTS_KEY_PREFIX = 'school-board-announcements-';
+export const ANNOUNCEMENTS_KEY_PREFIX = 'school-board-announcements-v2-';
 
 const getDefaultAnnouncements = (): Omit<Announcement, 'id' | 'createdAt' | 'isActive'>[] => [
     {
