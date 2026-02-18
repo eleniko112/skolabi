@@ -29,6 +29,7 @@ import { KeyRound, Loader2, ArrowLeft, ShieldCheck, Megaphone, Calendar, Palette
 import { AnnouncementEditor } from './announcement-editor';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { EmergencyEditor } from './emergency-editor';
+import { ScheduleEditor } from './schedule-editor';
 
 interface AdminDashboardProps {
   schoolId: string;
@@ -134,7 +135,7 @@ export function AdminDashboard({ schoolId, schoolName, adminPin }: AdminDashboar
           <AnnouncementEditor schoolId={schoolId} />
         </TabsContent>
         <TabsContent value="schedule" className="mt-6">
-          <Card><CardHeader><CardTitle>განრიგის რედაქტორი</CardTitle></CardHeader><CardContent><p>ეს სექცია მალე დაემატება.</p></CardContent></Card>
+          <ScheduleEditor schoolId={schoolId} />
         </TabsContent>
         <TabsContent value="emergency" className="mt-6">
           <EmergencyEditor schoolId={schoolId} />

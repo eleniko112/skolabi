@@ -6,41 +6,50 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { defaultSchedule, SCHEDULE_KEY_PREFIX } from '@/lib/schedule';
 
-// Dummy data, will be replaced by Firestore
-const schedule = [
-  { time: '09:00', label: '1-ლი გაკვეთილი' },
-  { time: '09:45', label: 'დასვენება' },
-  { time: '10:00', label: 'მე-2 გაკვეთილი' },
-  { time: '10:45', label: 'დასვენება' },
-  { time: '11:00', label: 'მე-3 გაკვეთილი' },
-  { time: '11:45', label: 'დასვენება' },
-  { time: '12:00', label: 'მე-4 გაკვეთილი' },
-  { time: '12:45', label: 'დიდი დასვენება' },
-  { time: '13:30', label: 'მე-5 გაკვეთილი' },
-  { time: '14:15', label: 'დასვენება' },
-  { time: '14:30', label: 'მე-6 გაკვეთილი' },
-  { time: '15:15', label: 'დასვენება' },
-  { time: '15:30', label: 'მე-7 გაკვეთილი' },
-  { time: '16:15', label: 'გაკვეთილები დასრულდა' },
-];
+type ScheduleItem = {
+    time: string;
+    label: string;
+};
 
 export function ScheduleTimer({ schoolId }: { schoolId: string }) {
   const [now, setNow] = useState<Date>();
   const [ntpWarning, setNtpWarning] = useState(false);
+  const [schedule, setSchedule] = useState<ScheduleItem[]>(defaultSchedule);
+  const storageKey = `${SCHEDULE_KEY_PREFIX}${schoolId}`;
 
   useEffect(() => {
-    // These will only run on the client, after initial hydration
+    const updateSchedule = () => {
+        try {
+            const savedSchedule = localStorage.getItem(storageKey);
+            setSchedule(savedSchedule ? JSON.parse(savedSchedule) : defaultSchedule);
+        } catch (error) {
+            console.error("Could not load schedule state:", error);
+            setSchedule(defaultSchedule);
+        }
+    };
+    
+    updateSchedule(); // Initial load
+
     const timer = setInterval(() => setNow(new Date()), 1000);
-    // Simulate NTP sync check failure
     const ntpCheck = setTimeout(() => setNtpWarning(true), 15000);
     setNow(new Date());
+
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === storageKey) {
+        updateSchedule();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
 
     return () => {
       clearInterval(timer);
       clearTimeout(ntpCheck);
+      window.removeEventListener('storage', handleStorageChange);
     };
-  }, []);
+  }, [storageKey]);
 
   if (!now) {
     return (
@@ -90,7 +99,6 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
         nextBell = bell;
       }
     }
-    // If no more bells today, take the first one of the next day
     if (!nextBell && schedule.length > 0) {
         const [h, m] = schedule[0].time.split(':').map(Number);
         nextBellTime = (h * 60 + m) + 24 * 60;
@@ -112,7 +120,6 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
       }
     }
     if (!prevBell && schedule.length > 0) {
-        // Before the first bell, previous is the last bell of yesterday
         const lastBell = schedule[schedule.length - 1];
         const [h, m] = lastBell.time.split(':').map(Number);
         prevBellTime = (h * 60 + m) - 24 * 60;
@@ -124,13 +131,31 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
   const { nextBell, nextBellTime } = findNextBell();
   const { prevBell, prevBellTime } = findPreviousBell();
 
+  if(!nextBell || !prevBell || schedule.length === 0) {
+    return (
+        <Card className="h-full shadow-lg">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-primary font-headline">
+                    <Clock className="h-6 w-6" />
+                    ზარების განრიგი
+                </CardTitle>
+            </CardHeader>
+            <CardContent className='pt-6'>
+                <p>განრიგი არ არის დაყენებული ან ცარიელია.</p>
+            </CardContent>
+        </Card>
+    );
+  }
+
   const diffSeconds = (nextBellTime * 60 - (currentTimeInMinutes * 60 + now.getSeconds()));
   const minutesLeft = Math.floor(diffSeconds / 60);
   const secondsLeft = diffSeconds % 60;
 
-  const totalDuration = nextBell && prevBell ? (nextBellTime - prevBellTime) * 60 : 1;
-  const elapsed = totalDuration - diffSeconds;
+  const totalDuration = (nextBellTime - prevBellTime) * 60;
+  const elapsed = totalDuration > 0 ? totalDuration - diffSeconds : 0;
   const progress = totalDuration > 0 ? (elapsed / totalDuration) * 100 : 0;
+
+  const currentPeriodLabel = prevBell.label;
 
   return (
     <Card className="h-full shadow-lg">
@@ -150,12 +175,13 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
         <div className="text-center p-4 bg-primary/5 rounded-lg">
             <div className="flex items-center justify-center gap-2 text-accent">
                 <Bell className="h-5 w-5" />
-                <p className="text-sm font-semibold">{prevBell?.label.includes('დასვენება') ? prevBell.label : nextBell?.label || 'დღე დასრულდა'}</p>
+                <p className="text-sm font-semibold">შემდეგი ზარი: {nextBell.label}</p>
             </div>
             <p className="text-5xl font-bold text-primary tracking-tighter tabular-nums">
                 {String(minutesLeft).padStart(2, '0')}:{String(secondsLeft).padStart(2, '0')}
             </p>
             <Progress value={progress} className="mt-4 h-2" />
+            <p className="text-xs text-muted-foreground mt-2">მიმდინარე: {currentPeriodLabel}</p>
         </div>
 
         <Separator />
