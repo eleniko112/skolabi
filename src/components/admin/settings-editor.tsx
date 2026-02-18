@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Music, KeyRound, Image as ImageIcon, Building } from 'lucide-react';
+import { Loader2, Save, Music, KeyRound, Image as ImageIcon, Building, Volume2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SETTINGS_KEY_PREFIX, defaultSettings, bellSoundOptions, type SchoolSettings } from '@/lib/settings';
 import { getSchoolById, updateSchool } from '@/lib/schools';
@@ -28,6 +28,55 @@ const settingsSchema = z.object({
   adminPin: z.string().length(4, "PIN კოდი უნდა შედგებოდეს 4 ციფრისგან."),
   boardPassword: z.string().min(4, "დაფის პაროლი უნდა იყოს მინიმუმ 4 სიმბოლო."),
 });
+
+// Web Audio API function to play sounds
+const playBellSound = (sound: string) => {
+    // Ensure this runs only in the browser
+    if (typeof window === 'undefined') return;
+
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    if (!audioContext) {
+        console.warn("Web Audio API is not supported in this browser.");
+        return;
+    }
+
+    const playTone = (freq: number, duration: number, type: OscillatorType, startTime = 0) => {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        oscillator.type = type;
+        oscillator.frequency.setValueAtTime(freq, audioContext.currentTime + startTime);
+        gainNode.gain.setValueAtTime(0.5, audioContext.currentTime + startTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + startTime + duration);
+
+        oscillator.start(audioContext.currentTime + startTime);
+        oscillator.stop(audioContext.currentTime + startTime + duration);
+    };
+
+    switch (sound) {
+        case 'digital':
+            playTone(1200, 0.15, 'square');
+            playTone(900, 0.2, 'square', 0.2);
+            break;
+        case 'chime':
+            playTone(1500, 0.2, 'sine');
+            playTone(1800, 0.3, 'sine', 0.2);
+            playTone(2100, 0.4, 'sine', 0.5);
+            break;
+        case 'short-beep':
+            playTone(880, 0.3, 'sine');
+            break;
+        case 'default':
+        default:
+            playTone(660, 0.4, 'triangle');
+            playTone(880, 0.4, 'triangle', 0.2);
+            break;
+    }
+};
+
 
 export function SettingsEditor({ schoolId }: SettingsEditorProps) {
   const [isLoading, setIsLoading] = useState(false);
@@ -129,7 +178,13 @@ export function SettingsEditor({ schoolId }: SettingsEditorProps) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="flex items-center gap-2"><Music className="h-4 w-4" /> ზარის ხმა</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select 
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          playBellSound(value);
+                        }} 
+                        defaultValue={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="აირჩიეთ ზარის ხმა..." />
@@ -138,7 +193,10 @@ export function SettingsEditor({ schoolId }: SettingsEditorProps) {
                         <SelectContent>
                           {bellSoundOptions.map(option => (
                             <SelectItem key={option.value} value={option.value}>
-                              {option.label}
+                              <div className="flex items-center justify-between w-full">
+                                <span>{option.label}</span>
+                                <Volume2 className="h-4 w-4 ml-4 text-muted-foreground" />
+                              </div>
                             </SelectItem>
                           ))}
                         </SelectContent>
