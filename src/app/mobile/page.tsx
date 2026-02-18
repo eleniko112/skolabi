@@ -7,11 +7,13 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 // Dummy data, will be replaced by Firestore
 const schedule = [
-  { time: '09:00 - 09:45', lesson: '1-ლი გაკვეთილი: მათემატიკა' },
-  { time: '10:00 - 10:45', lesson: 'მე-2 გაკვეთილი: ქართული' },
-  { time: '11:00 - 11:45', lesson: 'მე-3 გაკვეთილი: ინგლისური' },
-  { time: '12:00 - 12:30', lesson: 'დიდი დასვენება' },
-  { time: '12:30 - 13:15', lesson: 'მე-4 გაკვეთილი: ისტორია' },
+  { time: '09:00 - 09:45', lesson: '1-ლი გაკვეთილი' },
+  { time: '10:00 - 10:45', lesson: 'მე-2 გაკვეთილი' },
+  { time: '11:00 - 11:45', lesson: 'მე-3 გაკვეთილი' },
+  { time: '12:00 - 12:45', lesson: 'მე-4 გაკვეთილი' },
+  { time: '13:30 - 14:15', lesson: 'მე-5 გაკვეთილი' },
+  { time: '14:30 - 15:15', lesson: 'მე-6 გაკვეთილი' },
+  { time: '15:30 - 16:15', lesson: 'მე-7 გაკვეთილი' },
 ];
 
 const announcements = [
