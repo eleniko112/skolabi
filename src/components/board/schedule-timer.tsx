@@ -8,8 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { SchedulePeriod } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { useLocalStorage } from '@/hooks/use-local-storage';
-import { SCHEDULE_KEY_PREFIX } from '@/lib/schedule';
+import { getSchedule, SCHEDULE_KEY_PREFIX } from '@/lib/schedule';
 
 
 type ProcessedLesson = {
@@ -35,16 +34,30 @@ const LoadingState = () => (
 
 export function ScheduleTimer({ schoolId }: { schoolId: string }) {
   const [now, setNow] = useState<Date | undefined>();
-  const [schedule] = useLocalStorage<SchedulePeriod[]>(`${SCHEDULE_KEY_PREFIX}${schoolId}`, []);
+  const [schedule, setSchedule] = useState<SchedulePeriod[]>([]);
   
   useEffect(() => {
+    // Initialize schedule and ensure we have the latest.
+    const currentSchedule = getSchedule(schoolId);
+    setSchedule(currentSchedule);
+
     const timer = setInterval(() => setNow(new Date()), 1000);
     setNow(new Date());
 
+    // Set up a listener for changes in local storage
+    const handleStorageChange = (event: StorageEvent) => {
+        if (event.key === `${SCHEDULE_KEY_PREFIX}${schoolId}`) {
+            const updatedSchedule = getSchedule(schoolId);
+            setSchedule(updatedSchedule);
+        }
+    };
+    window.addEventListener('storage', handleStorageChange);
+
     return () => {
       clearInterval(timer);
+      window.removeEventListener('storage', handleStorageChange);
     };
-  }, []);
+  }, [schoolId]);
 
   const currentTimeInMinutes = now ? now.getHours() * 60 + now.getMinutes() : 0;
 

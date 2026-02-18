@@ -3,39 +3,45 @@
 import { useState, useEffect } from 'react';
 import { Siren, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useLocalStorage } from '@/hooks/use-local-storage';
-import { getEmergencyKey, type EmergencyState, setEmergencyState, defaultState } from '@/lib/emergency';
+import { getEmergencyKey, type EmergencyState, setEmergencyState as setGlobalEmergencyState, getEmergencyState } from '@/lib/emergency';
 import { addHistoryLog } from '@/lib/history';
 
 
 export function EmergencyOverlay({ schoolId }: { schoolId: string }) {
-  const [emergencyState, setLocalEmergencyState] = useLocalStorage<EmergencyState>(getEmergencyKey(schoolId), defaultState);
+  const [emergencyState, setEmergencyState] = useState<EmergencyState | null>(null);
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
-  }, []);
+    // Initialize state on mount
+    const currentState = getEmergencyState(schoolId);
+    setEmergencyState(currentState);
 
-  const handleClose = () => {
-    setEmergencyState(schoolId, { ...emergencyState, active: false });
-    setLocalEmergencyState({ ...emergencyState, active: false });
-    addHistoryLog(schoolId, {
-        action: "საგანგებო რეჟიმის გამორთვა",
-        details: "რეჟიმი გამოირთო დაფიდან.",
-    });
-  }
-
-  useEffect(() => {
+    // Listen for changes from other tabs/windows
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === getEmergencyKey(schoolId)) {
-        setLocalEmergencyState(JSON.parse(event.newValue || JSON.stringify(defaultState)));
+        const updatedState = getEmergencyState(schoolId);
+        setEmergencyState(updatedState);
       }
     };
     window.addEventListener('storage', handleStorageChange);
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, [schoolId, setLocalEmergencyState]);
+  }, [schoolId]);
+
+  const handleClose = () => {
+    if(emergencyState) {
+        // Update local state for immediate UI change
+        setEmergencyState({ ...emergencyState, active: false });
+        // Update localStorage and notify other tabs
+        setGlobalEmergencyState(schoolId, { ...emergencyState, active: false });
+        addHistoryLog(schoolId, {
+            action: "საგანგებო რეჟიმის გამორთვა",
+            details: "რეჟიმი გამოირთო დაფიდან.",
+        });
+    }
+  }
 
   if (!isClient || !emergencyState?.active) {
     return null;

@@ -14,10 +14,31 @@ import Autoplay from "embla-carousel-autoplay"
 import { getAnnouncements, ANNOUNCEMENTS_KEY_PREFIX } from '@/lib/announcements';
 import { Announcement } from '@/lib/types';
 import { Megaphone } from 'lucide-react';
-import { useLocalStorage } from '@/hooks/use-local-storage';
 
 export function InfoBoard({ schoolId }: { schoolId: string }) {
-    const [announcements] = useLocalStorage<Announcement[]>(`${ANNOUNCEMENTS_KEY_PREFIX}${schoolId}`, []);
+    const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+
+    useEffect(() => {
+        // Initialize announcements and ensure we have the latest.
+        // The `true` flag will create default announcements if none exist.
+        const currentAnnouncements = getAnnouncements(schoolId, true);
+        setAnnouncements(currentAnnouncements);
+
+        // Set up a listener for changes in local storage from other tabs/windows
+        const handleStorageChange = (event: StorageEvent) => {
+            if (event.key === `${ANNOUNCEMENTS_KEY_PREFIX}${schoolId}`) {
+                const updatedAnnouncements = getAnnouncements(schoolId);
+                setAnnouncements(updatedAnnouncements);
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+        };
+    }, [schoolId]);
+
 
     const activeAnnouncements = announcements.filter(ann => {
         const today = new Date();
