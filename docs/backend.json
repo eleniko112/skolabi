@@ -1,7 +1,6 @@
 {
   "entities": {
     "School": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "School",
       "type": "object",
       "description": "Represents a school's main data, including credentials.",
@@ -27,7 +26,6 @@
       "required": ["name", "password", "adminPin"]
     },
     "Announcement": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Announcement",
       "type": "object",
       "description": "An announcement to be displayed on the board.",
@@ -72,7 +70,6 @@
       "required": ["title", "content", "startDate", "endDate", "isActive", "createdAt"]
     },
     "HistoryLog": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "HistoryLog",
       "type": "object",
       "description": "A log entry for an administrative action.",
@@ -133,6 +130,6 @@
         }
       }
     ],
-    "reasoning": "The Firestore structure is simplified to a two-level hierarchy. The top-level `schools` collection holds the primary data for each school. Nested under each school document are subcollections for related data like `announcements` and `history`. Configuration data (schedule, theme, settings, emergency) is stored in single documents within a `config` subcollection under each school, as they represent singleton states rather than a list of entities. This model is straightforward, scalable for the app's needs, and facilitates easy querying of data on a per-school basis."
+    "reasoning": "The Firestore structure is simplified to a two-level hierarchy. The top-level `schools` collection holds the primary data for each school. Nested under each school document are subcollections for related data like `announcements` and `history`. Configuration data (schedule, theme, settings, emergency) is stored in single documents within a `config` subcollection under each school, as they represent a singleton state rather than a list of entities. This model is straightforward, scalable for the app's needs, and facilitates easy querying of data on a per-school basis."
   }
 }

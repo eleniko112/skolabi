@@ -3,7 +3,7 @@ import { School, Announcement, SchedulePeriod } from './types';
 import { PlaceHolderImages } from './placeholder-images';
 
 // Default Schools Data
-const defaultSchools: School[] = [
+const defaultSchools: Omit<School, 'id'>[] = [
   { 
     name: '1-ლი საჯარო სკოლა', 
     password: '1111', 
@@ -86,7 +86,7 @@ export async function seedInitialData(db: Firestore): Promise<void> {
 
   // 1. Seed Schools
   for (const schoolData of defaultSchools) {
-    const schoolRef = doc(collection(db, 'schools')); // Auto-generate ID
+    const schoolRef = doc(db, 'schools', schoolData.name.toLowerCase().replace(/ /g, '-'));
     batch.set(schoolRef, schoolData);
     const schoolId = schoolRef.id;
 

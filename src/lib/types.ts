@@ -1,6 +1,7 @@
 import type { Timestamp } from 'firebase/firestore';
 
 export interface School {
+  id: string;
   name: string;
   password?: string;
   adminPin?: string;
@@ -14,6 +15,7 @@ export interface Bell {
 }
 
 export interface Announcement {
+  id: string;
   title: string;
   content: string;
   imageUrl: string;
@@ -31,6 +33,7 @@ export interface EmergencyAnnouncement {
 }
 
 export interface HistoryLog {
+  id: string;
   timestamp: string; // ISO string
   action: string;
   details: string;

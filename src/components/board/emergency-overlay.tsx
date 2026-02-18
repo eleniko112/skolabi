@@ -2,10 +2,11 @@
 
 import { Siren, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useDoc, useFirestore, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
-import { doc, collection } from 'firebase/firestore';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
 import { EmergencyState } from '@/lib/types';
-import { Loader2 } from 'lucide-react';
+import { addDocumentNonBlocking } from '@/firebase';
+import { collection } from 'firebase/firestore';
 
 export function EmergencyOverlay({ schoolId }: { schoolId: string }) {
   const firestore = useFirestore();
@@ -15,7 +16,7 @@ export function EmergencyOverlay({ schoolId }: { schoolId: string }) {
     return doc(firestore, 'schools', schoolId, 'config', 'emergency');
   }, [firestore, schoolId]);
 
-  const { data: emergencyState, isLoading } = useDoc<EmergencyState>(emergencyDocRef);
+  const { data: emergencyState } = useDoc<EmergencyState>(emergencyDocRef);
 
   const historyCollectionRef = useMemoFirebase(() => {
       if (!firestore || !schoolId) return null;
@@ -25,7 +26,7 @@ export function EmergencyOverlay({ schoolId }: { schoolId: string }) {
   const handleClose = () => {
     if(!emergencyDocRef || !emergencyState) return;
 
-    updateDocumentNonBlocking(emergencyDocRef, { active: false });
+    updateDoc(emergencyDocRef, { active: false });
 
     if (historyCollectionRef) {
         addDocumentNonBlocking(historyCollectionRef, {
@@ -36,7 +37,7 @@ export function EmergencyOverlay({ schoolId }: { schoolId: string }) {
     }
   }
 
-  if (isLoading || !emergencyState?.active) {
+  if (!emergencyState?.active) {
     return null;
   }
   

@@ -19,8 +19,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useCollection, useFirestore, useMemoFirebase, type WithId } from '@/firebase';
-import { collection, query, orderBy, doc, writeBatch } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy, getDocs, writeBatch } from 'firebase/firestore';
 
 
 interface HistoryViewerProps {
@@ -53,12 +53,12 @@ export function HistoryViewer({ schoolId }: HistoryViewerProps) {
     const { data: history, isLoading } = useCollection<HistoryLog>(historyQuery);
 
     const handleClearHistory = async () => {
-        if (!firestore || !history) return;
+        if (!historyCollectionRef) return;
         
+        const snapshot = await getDocs(historyCollectionRef);
         const batch = writeBatch(firestore);
-        history.forEach(log => {
-            const docRef = doc(firestore, 'schools', schoolId, 'history', log.id);
-            batch.delete(docRef);
+        snapshot.docs.forEach(doc => {
+            batch.delete(doc.ref);
         });
         
         try {
