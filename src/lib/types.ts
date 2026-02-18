@@ -14,7 +14,7 @@ export interface School {
 }
 
 export interface Bell {
-  id: string;
+  id:string;
   time: string; // "HH:MM"
   label: string; // e.g., "1st Lesson Start", "Break End"
   sound: string; // "default.mp3"
@@ -26,10 +26,10 @@ export interface Announcement {
   content: string;
   imageUrl: string;
   imageHint?: string;
-  startDate: Timestamp;
-  endDate: Timestamp;
+  startDate: string; // YYYY-MM-DD
+  endDate: string; // YYYY-MM-DD
   isActive: boolean;
-  createdAt: Timestamp;
+  createdAt: string; // ISO string
 }
 
 export interface EmergencyAnnouncement {

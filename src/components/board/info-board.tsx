@@ -1,6 +1,7 @@
+
 "use client";
 
-import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import {
   Carousel,
@@ -11,34 +12,61 @@ import {
 } from '@/components/ui/carousel';
 import { Card, CardContent } from '@/components/ui/card';
 import Autoplay from "embla-carousel-autoplay"
+import { getAnnouncements, ANNOUNCEMENTS_KEY_PREFIX } from '@/lib/announcements';
+import { Announcement } from '@/lib/types';
+import { Megaphone } from 'lucide-react';
 
-// Dummy data, will be replaced with real-time Firestore data
-const announcements = [
-  {
-    id: '1',
-    title: 'ტრენინგი AI-ზე და ჩვენს მიდგომაზე',
-    content: 'დღეს, 15:00 საათზე, სააქტო დარბაზში გაიმართება საინტერესო ტრენინგი ხელოვნურ ინტელექტზე. განვიხილავთ თანამედროვე ტექნოლოგიებს და მათ გამოყენებას განათლებაში. დასწრება თავისუფალია.',
-    imageId: 'ai-training',
-  },
-  {
-    id: '2',
-    title: 'სასკოლო სპორტული დღე',
-    content: 'მომავალ შაბათს, სკოლის სტადიონზე ჩატარდება ყოველწლიური სპორტული დღე. გელოდებით ყველას, მონაწილეობის მისაღებად და თქვენი კლასელების გასამხნევებლად!',
-    imageId: 'sports-day',
-  },
-  {
-    id: '3',
-    title: 'საგაზაფხულო კონცერტი',
-    content: 'მოემზადეთ! საგაზაფხულო კონცერტი გაიმართება 25 მაისს. ჩვენი ნიჭიერი მოსწავლეები წარმოგიდგენენ მუსიკალურ და თეატრალურ ნომრებს. ბილეთები მალე გაიყიდება.',
-    imageId: 'school-concert',
-  }
-];
-
-const getImage = (id: string) => PlaceHolderImages.find(img => img.id === id);
 
 export function InfoBoard({ schoolId }: { schoolId: string }) {
-  // In a real app, you would use a hook here to fetch real-time data from Firestore
-  // e.g., const { data: announcements, loading } = useFirestoreCollection(`schools/${schoolId}/announcements`);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+
+  useEffect(() => {
+    const loadAnnouncements = () => {
+        if (!schoolId) return;
+        const allAnnouncements = getAnnouncements(schoolId);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const activeAnnouncements = allAnnouncements.filter(ann => {
+            try {
+                const startDate = new Date(ann.startDate);
+                const endDate = new Date(ann.endDate);
+                startDate.setHours(0,0,0,0);
+                endDate.setHours(0,0,0,0);
+                return ann.isActive && startDate <= today && endDate >= today;
+            } catch (e) {
+                return false;
+            }
+        });
+        setAnnouncements(activeAnnouncements);
+    };
+
+    loadAnnouncements();
+
+    const storageKey = `${ANNOUNCEMENTS_KEY_PREFIX}${schoolId}`;
+    const handleStorageChange = (event: StorageEvent) => {
+        if (event.key === storageKey) {
+            loadAnnouncements();
+        }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [schoolId]);
+
+  if (announcements.length === 0) {
+    return (
+        <Card className="h-full w-full shadow-xl overflow-hidden rounded-xl">
+            <CardContent className="p-0 h-full flex items-center justify-center bg-muted/20">
+                <div className="text-center text-muted-foreground">
+                    <Megaphone className="h-16 w-16 mx-auto mb-4" />
+                    <h2 className="text-2xl font-semibold font-headline">ამჟამად აქტიური განცხადებები არ არის</h2>
+                    <p className="mt-2">გთხოვთ, შეამოწმოთ მოგვიანებით.</p>
+                </div>
+            </CardContent>
+        </Card>
+    );
+  }
 
   return (
     <Card className="h-full w-full shadow-xl overflow-hidden rounded-xl">
@@ -51,20 +79,22 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
                   stopOnInteraction: true,
                 }),
             ]}
+            opts={{
+                loop: true,
+            }}
         >
           <CarouselContent className="h-full">
             {announcements.map((ann) => {
-              const image = getImage(ann.imageId);
               return (
                 <CarouselItem key={ann.id} className="h-full">
                   <div className="relative w-full h-full">
-                    {image && (
+                    {ann.imageUrl && (
                       <Image
-                        src={image.imageUrl}
+                        src={ann.imageUrl}
                         alt={ann.title}
                         fill
                         className="object-cover"
-                        data-ai-hint={image.imageHint}
+                        data-ai-hint={ann.imageHint}
                         priority
                       />
                     )}
@@ -82,8 +112,12 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
               );
             })}
           </CarouselContent>
-          <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 text-white bg-black/30 hover:bg-black/50 border-none h-12 w-12" />
-          <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 text-white bg-black/30 hover:bg-black/50 border-none h-12 w-12" />
+          {announcements.length > 1 && (
+            <>
+              <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 text-white bg-black/30 hover:bg-black/50 border-none h-12 w-12" />
+              <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 text-white bg-black/30 hover:bg-black/50 border-none h-12 w-12" />
+            </>
+          )}
         </Carousel>
       </CardContent>
     </Card>

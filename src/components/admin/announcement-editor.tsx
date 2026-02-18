@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, PlusCircle, Wand2, BookText, Trash2 } from 'lucide-react';
+import { Loader2, PlusCircle, Wand2, BookText, Trash2, CalendarIcon } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -22,28 +23,53 @@ import {
 import { Badge } from '../ui/badge';
 import { generateAnnouncement } from '@/ai/flows/generate-announcement';
 import { summarizeAnnouncement } from '@/ai/flows/summarize-announcement';
+import { Switch } from '@/components/ui/switch';
+import { getAnnouncements, addAnnouncement, deleteAnnouncement, updateAnnouncement, ANNOUNCEMENTS_KEY_PREFIX } from '@/lib/announcements';
+import { Announcement } from '@/lib/types';
+import { format } from 'date-fns';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { cn } from '@/lib/utils';
+import { Calendar } from '../ui/calendar';
 
 
 interface AnnouncementEditorProps {
     schoolId: string;
 }
 
-// Dummy data
-const announcementsData = [
-    { id: '1', title: 'ტრენინგი AI-ზე', isActive: true, startDate: '2024-05-20', endDate: '2024-05-28' },
-    { id: '2', title: 'სასკოლო სპორტული დღე', isActive: true, startDate: '2024-05-22', endDate: '2024-06-01' },
-    { id: '3', title: 'საგაზაფხულო კონცერტი', isActive: false, startDate: '2024-05-25', endDate: '2024-05-25' },
-];
-
 const announcementSchema = z.object({
   title: z.string().min(3, "სათაური უნდა შეიცავდეს მინიმუმ 3 სიმბოლოს."),
   content: z.string().min(10, "შინაარსი უნდა შეიცავდეს მინიმუმ 10 სიმბოლოს."),
-  imageUrl: z.string().url("გთხოვთ მიუთითოთ ვალიდური სურათის მისამართი."),
+  imageUrl: z.string().url("გთხოვთ მიუთითოთ ვალიდური სურათის მისამართი.").or(z.literal('')),
+  startDate: z.date({ required_error: "აირჩიეთ დაწყების თარიღი" }),
+  endDate: z.date({ required_error: "აირჩიეთ დასრულების თარიღი" }),
+}).refine(data => data.endDate >= data.startDate, {
+    message: "დასრულების თარიღი უნდა იყოს დაწყების თარიღზე გვიან.",
+    path: ["endDate"],
 });
 
+
 export function AnnouncementEditor({ schoolId }: AnnouncementEditorProps) {
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const loadAnnouncements = () => {
+        const sortedAnnouncements = getAnnouncements(schoolId).sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setAnnouncements(sortedAnnouncements);
+    }
+    loadAnnouncements();
+
+    const storageKey = `${ANNOUNCEMENTS_KEY_PREFIX}${schoolId}`;
+    const handleStorageChange = (event: StorageEvent) => {
+        if (event.key === storageKey) {
+            loadAnnouncements();
+        }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [schoolId]);
 
   const form = useForm<z.infer<typeof announcementSchema>>({
     resolver: zodResolver(announcementSchema),
@@ -51,6 +77,8 @@ export function AnnouncementEditor({ schoolId }: AnnouncementEditorProps) {
       title: "",
       content: "",
       imageUrl: "https://picsum.photos/seed/placeholder/1200/800",
+      startDate: new Date(),
+      endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     }
   });
 
@@ -91,9 +119,24 @@ export function AnnouncementEditor({ schoolId }: AnnouncementEditorProps) {
   }
 
   function onSubmit(values: z.infer<typeof announcementSchema>) {
-    console.log(values);
+    addAnnouncement(schoolId, { 
+        ...values, 
+        isActive: true,
+        startDate: format(values.startDate, 'yyyy-MM-dd'),
+        endDate: format(values.endDate, 'yyyy-MM-dd'),
+    });
     toast({ title: "განცხადება შენახულია", description: "თქვენი ცვლილებები აისახა დაფაზე." });
     form.reset();
+  }
+
+  const handleDelete = (announcementId: string) => {
+    deleteAnnouncement(schoolId, announcementId);
+    toast({ title: "განცხადება წაიშალა" });
+  }
+
+  const handleToggleActive = (announcement: Announcement) => {
+    updateAnnouncement(schoolId, { ...announcement, isActive: !announcement.isActive });
+    toast({ title: 'სტატუსი განახლდა' });
   }
 
   return (
@@ -102,28 +145,37 @@ export function AnnouncementEditor({ schoolId }: AnnouncementEditorProps) {
             <Card>
                 <CardHeader>
                     <CardTitle>არსებული განცხადებები</CardTitle>
-                    <CardDescription>აქ შეგიძლიათ ნახოთ, შეცვალოთ ან წაშალოთ არსებული განცხადებები.</CardDescription>
+                    <CardDescription>აქ შეგიძლიათ ნახოთ, გაააქტიუროთ ან წაშალოთ არსებული განცხადებები.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>სათაური</TableHead>
                                 <TableHead>სტატუსი</TableHead>
+                                <TableHead>სათაური</TableHead>
                                 <TableHead>აქტიურია (დან)</TableHead>
                                 <TableHead>აქტიურია (მდე)</TableHead>
                                 <TableHead className="text-right">მოქმედებები</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {announcementsData.map(ann => (
-                                <TableRow key={ann.id}>
+                            {announcements.map(ann => (
+                                <TableRow key={ann.id} className={!ann.isActive ? 'bg-muted/50' : ''}>
+                                    <TableCell>
+                                        <Switch
+                                            checked={ann.isActive}
+                                            onCheckedChange={() => handleToggleActive(ann)}
+                                            aria-label="Toggle announcement"
+                                        />
+                                    </TableCell>
                                     <TableCell className="font-medium">{ann.title}</TableCell>
-                                    <TableCell><Badge variant={ann.isActive ? 'default' : 'secondary'}>{ann.isActive ? 'აქტიური' : 'არააქტიური'}</Badge></TableCell>
                                     <TableCell>{ann.startDate}</TableCell>
                                     <TableCell>{ann.endDate}</TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(ann.id)}>
+                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                            <span className="sr-only">წაშლა</span>
+                                        </Button>
                                     </TableCell>
                                 </TableRow>
                             ))}
@@ -162,7 +214,7 @@ export function AnnouncementEditor({ schoolId }: AnnouncementEditorProps) {
                   <FormItem>
                     <FormLabel>შინაარსი</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="განცხადების სრული ტექსტი..." className="min-h-[150px]" {...field} />
+                      <Textarea placeholder="განცხადების სრული ტექსტი..." className="min-h-[120px]" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -178,6 +230,88 @@ export function AnnouncementEditor({ schoolId }: AnnouncementEditorProps) {
                     შეჯამება
                 </Button>
               </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                    control={form.control}
+                    name="startDate"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                        <FormLabel>დაწყების თარიღი</FormLabel>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                            <FormControl>
+                                <Button
+                                variant={"outline"}
+                                className={cn(
+                                    "w-full pl-3 text-left font-normal",
+                                    !field.value && "text-muted-foreground"
+                                )}
+                                >
+                                {field.value ? (
+                                    format(field.value, "PPP")
+                                ) : (
+                                    <span>აირჩიეთ თარიღი</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                            </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={field.onChange}
+                                disabled={(date) => date < new Date(new Date().setDate(new Date().getDate()-1))}
+                                initialFocus
+                            />
+                            </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={form.control}
+                    name="endDate"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                        <FormLabel>დასრულების თარიღი</FormLabel>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                            <FormControl>
+                                <Button
+                                variant={"outline"}
+                                className={cn(
+                                    "w-full pl-3 text-left font-normal",
+                                    !field.value && "text-muted-foreground"
+                                )}
+                                >
+                                {field.value ? (
+                                    format(field.value, "PPP")
+                                ) : (
+                                    <span>აირჩიეთ თარიღი</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                            </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={field.onChange}
+                                disabled={(date) => date < (form.getValues("startDate") || new Date())}
+                                initialFocus
+                            />
+                            </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                </div>
+
               <FormField
                 control={form.control}
                 name="imageUrl"
