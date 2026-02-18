@@ -1,6 +1,6 @@
 import { School } from './types';
 import { PlaceHolderImages } from './placeholder-images';
-import { getAnnouncements } from './announcements';
+import { getAnnouncements, initializeAnnouncements } from './announcements';
 import { getSchedule } from './schedule';
 import { getTheme } from './theme';
 import { getSettings } from './settings';
@@ -48,7 +48,7 @@ export const getSchools = (initialize = false): School[] => {
         
         // Initialize data for each default school
         schools.forEach(school => {
-            getAnnouncements(school.id, true);
+            initializeAnnouncements(school.id);
             getSchedule(school.id);
             getTheme(school.id);
             getSettings(school.id);

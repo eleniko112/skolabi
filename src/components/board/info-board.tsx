@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/carousel';
 import { Card, CardContent } from '@/components/ui/card';
 import Autoplay from "embla-carousel-autoplay"
-import { getAnnouncements, ANNOUNCEMENTS_KEY_PREFIX } from '@/lib/announcements';
+import { getAnnouncements, initializeAnnouncements, ANNOUNCEMENTS_KEY_PREFIX } from '@/lib/announcements';
 import { Announcement } from '@/lib/types';
 import { Megaphone } from 'lucide-react';
 
@@ -19,15 +19,24 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
     const [activeAnnouncements, setActiveAnnouncements] = useState<Announcement[]>([]);
 
     useEffect(() => {
-        // Get only active announcements, and initialize if necessary
-        const currentAnnouncements = getAnnouncements(schoolId, true, true);
-        setActiveAnnouncements(currentAnnouncements);
+        const loadAnnouncements = () => {
+            let active = getAnnouncements(schoolId, true);
+            
+            // If no active announcements are found, it might be because the data is stale or doesn't exist.
+            // Let's re-initialize and try again.
+            if (active.length === 0) {
+                initializeAnnouncements(schoolId);
+                active = getAnnouncements(schoolId, true);
+            }
+            setActiveAnnouncements(active);
+        }
+
+        loadAnnouncements();
 
         const handleStorageChange = (event: StorageEvent) => {
             if (event.key === `${ANNOUNCEMENTS_KEY_PREFIX}${schoolId}`) {
-                // On update, get only active announcements
-                const updatedAnnouncements = getAnnouncements(schoolId, false, true);
-                setActiveAnnouncements(updatedAnnouncements);
+                // Just get the latest active announcements on any change.
+                setActiveAnnouncements(getAnnouncements(schoolId, true));
             }
         };
 
