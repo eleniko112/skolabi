@@ -8,6 +8,7 @@ import { QRCodeDisplay } from '@/components/board/qr-code-display';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Settings } from 'lucide-react';
+import { EmergencyOverlay } from '@/components/board/emergency-overlay';
 
 // Dummy data, will be replaced by Firestore
 const schoolData = {
@@ -27,6 +28,7 @@ export default function BoardPage({ params }: { params: { schoolId: string } }) 
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
+      <EmergencyOverlay />
       <header className="flex items-center justify-between p-4 border-b bg-card shadow-sm sticky top-0 z-20">
         <div className="flex items-center gap-4">
           {logo && (

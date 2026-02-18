@@ -28,6 +28,7 @@ import { useToast } from '@/hooks/use-toast';
 import { KeyRound, Loader2, ArrowLeft, ShieldCheck, Megaphone, Calendar, Palette, Settings, History, CloudLightning } from 'lucide-react';
 import { AnnouncementEditor } from './announcement-editor';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
+import { EmergencyEditor } from './emergency-editor';
 
 interface AdminDashboardProps {
   schoolId: string;
@@ -136,7 +137,7 @@ export function AdminDashboard({ schoolId, schoolName, adminPin }: AdminDashboar
           <Card><CardHeader><CardTitle>განრიგის რედაქტორი</CardTitle></CardHeader><CardContent><p>ეს სექცია მალე დაემატება.</p></CardContent></Card>
         </TabsContent>
         <TabsContent value="emergency" className="mt-6">
-          <Card><CardHeader><CardTitle>საგანგებო განცხადების მართვა</CardTitle></CardHeader><CardContent><p>ეს სექცია მალე დაემატება.</p></CardContent></Card>
+          <EmergencyEditor schoolId={schoolId} />
         </TabsContent>
         <TabsContent value="appearance" className="mt-6">
           <Card><CardHeader><CardTitle>დაფის გარეგნობის რედაქტორი</CardTitle></CardHeader><CardContent><p>ეს სექცია მალე დაემატება.</p></CardContent></Card>
