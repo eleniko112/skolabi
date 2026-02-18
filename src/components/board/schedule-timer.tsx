@@ -8,8 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { SchedulePeriod } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useLocalStorage } from '@/hooks/use-local-storage';
+import { SCHEDULE_KEY_PREFIX } from '@/lib/schedule';
 
 
 type ProcessedLesson = {
@@ -35,16 +35,8 @@ const LoadingState = () => (
 
 export function ScheduleTimer({ schoolId }: { schoolId: string }) {
   const [now, setNow] = useState<Date | undefined>();
-  const firestore = useFirestore();
-
-  const scheduleDocRef = useMemoFirebase(() => {
-    if (!firestore || !schoolId) return null;
-    return doc(firestore, 'schools', schoolId, 'config', 'schedule');
-  }, [firestore, schoolId]);
+  const [schedule] = useLocalStorage<SchedulePeriod[]>(`${SCHEDULE_KEY_PREFIX}${schoolId}`, []);
   
-  const { data: scheduleData, isLoading: isScheduleLoading } = useDoc<{ periods: SchedulePeriod[] }>(scheduleDocRef);
-  const schedule = scheduleData?.periods || [];
-
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 1000);
     setNow(new Date());
@@ -57,7 +49,6 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
   const currentTimeInMinutes = now ? now.getHours() * 60 + now.getMinutes() : 0;
 
   const timerSchedule = useMemo(() => {
-      if (!schedule) return [];
       return schedule.map(period => ({
           time: period.startTime,
           label: period.label,
@@ -66,7 +57,7 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
 
 
   const processedSchedule = useMemo((): ProcessedLesson[] => {
-    if (!schedule || schedule.length === 0) return [];
+    if (schedule.length === 0) return [];
 
     return schedule
         .filter(item => item.label.includes('გაკვეთილი') && !item.label.includes('დასრულდა'))
@@ -88,7 +79,7 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
   }, [schedule, currentTimeInMinutes]);
 
 
-  if (!now || isScheduleLoading) {
+  if (!now) {
     return <LoadingState />;
   }
 

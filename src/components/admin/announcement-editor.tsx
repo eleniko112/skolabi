@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, PlusCircle, BookText, Trash2, CalendarIcon } from 'lucide-react';
+import { getAnnouncements, addAnnouncement, deleteAnnouncement, updateAnnouncement } from '@/lib/announcements';
 import {
   Table,
   TableBody,
@@ -22,13 +23,11 @@ import {
 import { summarizeAnnouncement } from '@/ai/flows/summarize-announcement';
 import { Switch } from '@/components/ui/switch';
 import { Announcement } from '@/lib/types';
+import { addHistoryLog } from '@/lib/history';
 import { format } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { cn } from '@/lib/utils';
 import { Calendar } from '../ui/calendar';
-import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { collection, orderBy, query, doc } from 'firebase/firestore';
-
 
 interface AnnouncementEditorProps {
     schoolId: string;
@@ -48,21 +47,15 @@ const announcementSchema = z.object({
 
 
 export function AnnouncementEditor({ schoolId }: AnnouncementEditorProps) {
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  const firestore = useFirestore();
 
-  const announcementsCollectionRef = useMemoFirebase(() => {
-    if (!firestore || !schoolId) return null;
-    return collection(firestore, 'schools', schoolId, 'announcements');
-  }, [firestore, schoolId]);
-
-  const announcementsQuery = useMemoFirebase(() => {
-    if(!announcementsCollectionRef) return null;
-    return query(announcementsCollectionRef, orderBy('createdAt', 'desc'));
-  }, [announcementsCollectionRef]);
-
-  const { data: announcements, isLoading } = useCollection<Announcement>(announcementsQuery);
+  useEffect(() => {
+    setAnnouncements(getAnnouncements(schoolId));
+    setIsLoading(false);
+  }, [schoolId]);
 
   const form = useForm<z.infer<typeof announcementSchema>>({
     resolver: zodResolver(announcementSchema),
@@ -95,31 +88,36 @@ export function AnnouncementEditor({ schoolId }: AnnouncementEditorProps) {
   }
 
   function onSubmit(values: z.infer<typeof announcementSchema>) {
-    if (!announcementsCollectionRef) return;
-    const newAnnouncement = { 
+    addAnnouncement(schoolId, { 
         ...values, 
-        isActive: true,
         startDate: format(values.startDate, 'yyyy-MM-dd'),
         endDate: format(values.endDate, 'yyyy-MM-dd'),
-        createdAt: new Date().toISOString(),
-    };
-    addDocumentNonBlocking(announcementsCollectionRef, newAnnouncement);
+    });
+    setAnnouncements(getAnnouncements(schoolId));
+    addHistoryLog(schoolId, { action: "განცხადების დამატება", details: `დაემატა ახალი განცხადება: "${values.title}"` });
     toast({ title: "განცხადება შენახულია", description: "თქვენი ცვლილებები აისახა დაფაზე." });
     form.reset();
   }
 
   const handleDelete = (announcementId: string) => {
-    if (!firestore || !schoolId) return;
-    const docRef = doc(firestore, 'schools', schoolId, 'announcements', announcementId);
-    deleteDocumentNonBlocking(docRef);
+    const ann = announcements.find(a => a.id === announcementId);
+    if(ann) {
+        addHistoryLog(schoolId, { action: "განცხადების წაშლა", details: `წაიშალა განცხადება: "${ann.title}"` });
+    }
+    deleteAnnouncement(schoolId, announcementId);
+    setAnnouncements(getAnnouncements(schoolId));
     toast({ title: "განცხადება წაიშალა" });
   }
 
-  const handleToggleActive = (announcement: Announcement) => {
-    if (!firestore || !schoolId) return;
-    const docRef = doc(firestore, 'schools', schoolId, 'announcements', announcement.id);
-    updateDocumentNonBlocking(docRef, { isActive: !announcement.isActive });
-    toast({ title: 'სტატუსი განახლდა' });
+  const handleToggleActive = (announcementId: string, isActive: boolean) => {
+    const ann = announcements.find(a => a.id === announcementId);
+     if (ann) {
+      const updatedAnnouncement = { ...ann, isActive };
+      updateAnnouncement(schoolId, updatedAnnouncement);
+      setAnnouncements(getAnnouncements(schoolId));
+      addHistoryLog(schoolId, { action: "განცხადების სტატუსის ცვლილება", details: `განცხადების "${ann.title}" სტატუსი შეიცვალა: ${isActive ? 'აქტიური' : 'არააქტიური'}` });
+      toast({ title: 'სტატუსი განახლდა' });
+    }
   }
 
   return (
@@ -149,12 +147,12 @@ export function AnnouncementEditor({ schoolId }: AnnouncementEditorProps) {
                                     </TableCell>
                                 </TableRow>
                             )}
-                            {announcements?.map(ann => (
+                            {announcements.map(ann => (
                                 <TableRow key={ann.id} className={!ann.isActive ? 'bg-muted/50' : ''}>
                                     <TableCell>
                                         <Switch
                                             checked={ann.isActive}
-                                            onCheckedChange={() => handleToggleActive(ann)}
+                                            onCheckedChange={(checked) => handleToggleActive(ann.id, checked)}
                                             aria-label="Toggle announcement"
                                         />
                                     </TableCell>

@@ -1,5 +1,3 @@
-import type { Timestamp } from 'firebase/firestore';
-
 export interface School {
   id: string;
   name: string;
@@ -26,12 +24,6 @@ export interface Announcement {
   createdAt: string; // ISO string
 }
 
-export interface EmergencyAnnouncement {
-  active: boolean;
-  message: string;
-  updatedAt: Timestamp;
-}
-
 export interface HistoryLog {
   id: string;
   timestamp: string; // ISO string
@@ -53,9 +45,4 @@ export interface Theme {
 
 export interface SchoolSettings {
   bellSound: string;
-}
-
-export interface EmergencyState {
-  active: boolean;
-  message: string;
 }

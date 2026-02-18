@@ -10,8 +10,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save, RefreshCcw } from 'lucide-react';
-import { useDoc, useFirestore, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
-import { doc, collection } from 'firebase/firestore';
+import { getTheme, setTheme, defaultTheme } from '@/lib/theme';
+import { addHistoryLog } from '@/lib/history';
 import { Theme } from '@/lib/types';
 
 interface AppearanceEditorProps {
@@ -83,23 +83,11 @@ function hexToHsl(hex: string): string {
     return `${h} ${s}% ${l}%`;
 }
 
-const defaultTheme: Theme = {
-    background: "220 20% 97%",
-    primary: "221 39% 49%",
-    accent: "347 77% 60%",
-};
 
 export function AppearanceEditor({ schoolId }: AppearanceEditorProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [isDocLoading, setIsDocLoading] = useState(true);
   const { toast } = useToast();
-  const firestore = useFirestore();
-
-  const themeDocRef = useMemoFirebase(() => {
-    if (!firestore || !schoolId) return null;
-    return doc(firestore, 'schools', schoolId, 'config', 'theme');
-  }, [firestore, schoolId]);
-
-  const { data: theme, isLoading: isDocLoading } = useDoc<Theme>(themeDocRef);
 
   const form = useForm<Theme>({
     resolver: zodResolver(themeSchema),
@@ -107,52 +95,35 @@ export function AppearanceEditor({ schoolId }: AppearanceEditorProps) {
   });
 
   useEffect(() => {
-    if (theme) {
-        form.reset(theme);
-    }
-  }, [theme, form]);
-  
-  const historyCollectionRef = useMemoFirebase(() => {
-      if (!firestore || !schoolId) return null;
-      return collection(firestore, `schools/${schoolId}/history`);
-  }, [firestore, schoolId]);
+    const currentTheme = getTheme(schoolId);
+    form.reset(currentTheme);
+    setIsDocLoading(false);
+  }, [schoolId, form]);
 
   function onSubmit(values: Theme) {
-    if (!themeDocRef) return;
     setIsLoading(true);
-    
-    updateDocumentNonBlocking(themeDocRef, values);
-
-    if (historyCollectionRef) {
-        addDocumentNonBlocking(historyCollectionRef, {
-            action: "გარეგნობის განახლება", 
-            details: "ძირითადი ფერები შეიცვალა.",
-            timestamp: new Date().toISOString(),
-        });
-    }
-
+    setTheme(schoolId, values);
+    addHistoryLog(schoolId, {
+        action: "გარეგნობის განახლება", 
+        details: "ძირითადი ფერები შეიცვალა.",
+    });
     toast({
         title: "გარეგნობა შენახულია",
         description: "განახლებული თემა აისახა დაფაზე.",
     });
-
     setIsLoading(false);
+    window.location.reload(); // Force a refresh to apply theme
   }
   
   const resetTheme = () => {
-    if (!themeDocRef) return;
-    updateDocumentNonBlocking(themeDocRef, defaultTheme);
+    setTheme(schoolId, defaultTheme);
     form.reset(defaultTheme);
-    
-    if (historyCollectionRef) {
-        addDocumentNonBlocking(historyCollectionRef, {
-            action: "გარეგნობის განახლება",
-            details: "თემა დაუბრუნდა საწყის მდგომარეობას.",
-            timestamp: new Date().toISOString(),
-        });
-    }
-
+    addHistoryLog(schoolId, {
+        action: "გარეგნობის განახლება",
+        details: "თემა დაუბრუნდა საწყის მდგომარეობას.",
+    });
     toast({ title: "თემა საწყის მდგომარეობაში დაბრუნდა" });
+    window.location.reload();
   }
 
   if(isDocLoading) {

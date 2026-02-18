@@ -1,31 +1,9 @@
-/**
- * @file firestore.rules
- * @description Firestore Security Rules for a School Information Board system.
- *
- * @section Core Philosophy
- * This ruleset implements a highly secure, scalable authorization model centered on "Authorization Independence via Denormalization."
- * Instead of relying on slow and costly `get()` calls to parent documents to check permissions, authorization context (specifically, an `adminMembers` map)
- * is denormalized onto every document that requires administrative control. This ensures that access decisions are fast, atomic, and easy to debug.
- *
- * @section Data Structure
- * The data is organized hierarchically to reflect real-world relationships:
- * - /schools/{schoolId}: A top-level, public-readable collection for school discovery.
- * - /schools/{schoolId}/boardConfigurations/{boardConfigurationId}: Contains the core settings for a specific school's board. This document holds the master `adminMembers` map.
- * - All other data (Announcements, Events, Schedules, etc.) is nested within subcollections under its parent `boardConfiguration`.
- *
- * @section Key Security Decisions
- * - WARNING: The current rules are open for development and allow anyone to read and write. They MUST be secured before production.
- * - The final security model will follow these principles:
- *   - Public Discovery vs. Private Control: The top-level `/schools` collection will be public for anyone to read. All write operations will be locked down.
- *   - Admin-by-Document: All write access to board configurations and their sub-collections will be strictly limited to users whose UIDs are present in an `adminMembers` map on the specific document being accessed. There will be no global admin roles.
- *   - Segregated Data: Publicly visible data (announcements, events) will be structured for public reads, while sensitive audit data (`adminLogs`) will be restricted to board admins.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // WARNING: These rules are insecure and are for initial development only.
-    // They allow anyone to read and write to your entire database.
-    // You MUST secure your database before deploying to production.
+    // This rule allows anyone with your project's credentials to read and write
+    // to your entire database. It is not secure and should be updated.
+    // For more details, see: https://firebase.google.com/docs/firestore/security/get-started
     match /{document=**} {
       allow read, write: if true;
     }

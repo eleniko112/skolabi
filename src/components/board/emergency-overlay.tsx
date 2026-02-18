@@ -1,43 +1,43 @@
 "use client";
 
+import { useState, useEffect } from 'react';
 import { Siren, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
-import { EmergencyState } from '@/lib/types';
-import { addDocumentNonBlocking } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useLocalStorage } from '@/hooks/use-local-storage';
+import { getEmergencyKey, type EmergencyState, setEmergencyState, defaultState } from '@/lib/emergency';
+import { addHistoryLog } from '@/lib/history';
+
 
 export function EmergencyOverlay({ schoolId }: { schoolId: string }) {
-  const firestore = useFirestore();
-  
-  const emergencyDocRef = useMemoFirebase(() => {
-    if (!firestore || !schoolId) return null;
-    return doc(firestore, 'schools', schoolId, 'config', 'emergency');
-  }, [firestore, schoolId]);
+  const [emergencyState, setLocalEmergencyState] = useLocalStorage<EmergencyState>(getEmergencyKey(schoolId), defaultState);
+  const [isClient, setIsClient] = useState(false);
 
-  const { data: emergencyState } = useDoc<EmergencyState>(emergencyDocRef);
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
-  const historyCollectionRef = useMemoFirebase(() => {
-      if (!firestore || !schoolId) return null;
-      return collection(firestore, 'schools', schoolId, 'history');
-  }, [firestore, schoolId]);
-  
   const handleClose = () => {
-    if(!emergencyDocRef || !emergencyState) return;
-
-    updateDoc(emergencyDocRef, { active: false });
-
-    if (historyCollectionRef) {
-        addDocumentNonBlocking(historyCollectionRef, {
-            action: "საგანგებო რეჟიმის გამორთვა",
-            details: "რეჟიმი გამოირთო დაფიდან.",
-            timestamp: new Date().toISOString(),
-        });
-    }
+    setEmergencyState(schoolId, { ...emergencyState, active: false });
+    setLocalEmergencyState({ ...emergencyState, active: false });
+    addHistoryLog(schoolId, {
+        action: "საგანგებო რეჟიმის გამორთვა",
+        details: "რეჟიმი გამოირთო დაფიდან.",
+    });
   }
 
-  if (!emergencyState?.active) {
+  useEffect(() => {
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === getEmergencyKey(schoolId)) {
+        setLocalEmergencyState(JSON.parse(event.newValue || JSON.stringify(defaultState)));
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [schoolId, setLocalEmergencyState]);
+
+  if (!isClient || !emergencyState?.active) {
     return null;
   }
   

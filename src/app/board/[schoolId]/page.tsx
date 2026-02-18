@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -7,31 +8,24 @@ import { InfoBoard } from '@/components/board/info-board';
 import { ScheduleTimer } from '@/components/board/schedule-timer';
 import { QRCodeDisplay } from '@/components/board/qr-code-display';
 import Image from 'next/image';
-import { Settings, School as SchoolIcon, Loader2 } from 'lucide-react';
-import { EmergencyOverlay } from '@/components/board/emergency-overlay';
-import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { Settings, School as SchoolIcon } from 'lucide-react';
+import { getSchoolById } from '@/lib/schools';
 import { School } from '@/lib/types';
-
+import { EmergencyOverlay } from '@/components/board/emergency-overlay';
 
 export default function BoardPage() {
   const params = useParams<{ schoolId: string }>();
   const schoolId = params.schoolId;
-  const firestore = useFirestore();
-
-  const schoolDocRef = useMemoFirebase(() => {
-    if (!firestore || !schoolId) return null;
-    return doc(firestore, 'schools', schoolId);
-  }, [firestore, schoolId]);
-
-  const { data: schoolInfo, isLoading } = useDoc<School>(schoolDocRef);
+  const [schoolInfo, setSchoolInfo] = useState<School | null>(null);
   
-  if (isLoading || !schoolId) {
-    return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
-  }
+  useEffect(() => {
+    if (schoolId) {
+      setSchoolInfo(getSchoolById(schoolId));
+    }
+  }, [schoolId]);
 
-  if (schoolInfo === null) {
-      return <div className="flex min-h-screen items-center justify-center"><p>School not found.</p></div>;
+  if (!schoolId || !schoolInfo) {
+    return <div className="flex min-h-screen items-center justify-center"><p>სკოლა არ მოიძებნა.</p></div>;
   }
 
   return (

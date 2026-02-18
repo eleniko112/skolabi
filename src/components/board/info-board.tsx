@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import {
   Carousel,
@@ -11,58 +11,28 @@ import {
 } from '@/components/ui/carousel';
 import { Card, CardContent } from '@/components/ui/card';
 import Autoplay from "embla-carousel-autoplay"
+import { getAnnouncements, ANNOUNCEMENTS_KEY_PREFIX } from '@/lib/announcements';
 import { Announcement } from '@/lib/types';
-import { Megaphone, Loader2 } from 'lucide-react';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
-
+import { Megaphone } from 'lucide-react';
+import { useLocalStorage } from '@/hooks/use-local-storage';
 
 export function InfoBoard({ schoolId }: { schoolId: string }) {
-  const firestore = useFirestore();
+    const [announcements] = useLocalStorage<Announcement[]>(`${ANNOUNCEMENTS_KEY_PREFIX}${schoolId}`, []);
 
-  const announcementsQuery = useMemoFirebase(() => {
-    if (!firestore || !schoolId) return null;
-    
-    const today = new Date().toISOString().split('T')[0];
-
-    return query(
-        collection(firestore, 'schools', schoolId, 'announcements'),
-        where('isActive', '==', true),
-        where('startDate', '<=', today)
-    );
-  }, [firestore, schoolId]);
-
-  const { data: announcements, isLoading } = useCollection<Announcement>(announcementsQuery);
-
-  const activeAnnouncements = useMemo(() => {
-    if (!announcements) return [];
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    return announcements.filter(ann => {
+    const activeAnnouncements = announcements.filter(ann => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
         try {
+            const startDate = new Date(ann.startDate);
             const endDate = new Date(ann.endDate);
+            startDate.setHours(0,0,0,0);
             endDate.setHours(0,0,0,0);
-            return endDate >= today;
-        } catch (e) {
+            return ann.isActive && startDate <= today && endDate >= today;
+        } catch(e) {
+            console.warn(`Could not parse date for announcement ${ann.id}`, ann)
             return false;
         }
     });
-  }, [announcements]);
-  
-
-  if (isLoading) {
-      return (
-        <Card className="h-full w-full shadow-xl overflow-hidden rounded-xl">
-            <CardContent className="p-0 h-full flex items-center justify-center bg-muted/20">
-                 <div className="text-center text-muted-foreground">
-                    <Loader2 className="h-16 w-16 mx-auto mb-4 animate-spin" />
-                    <h2 className="text-2xl font-semibold font-headline">იტვირთება განცხადებები...</h2>
-                </div>
-            </CardContent>
-        </Card>
-      )
-  }
 
   if (activeAnnouncements.length === 0) {
     return (

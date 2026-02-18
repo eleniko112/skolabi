@@ -1,19 +1,12 @@
 "use client";
 
 import { useEffect } from 'react';
-import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useLocalStorage } from '@/hooks/use-local-storage';
+import { THEME_KEY_PREFIX } from '@/lib/theme';
 import { type Theme } from '@/lib/types';
 
 export function ThemeInitializer({ schoolId }: { schoolId: string }) {
-  const firestore = useFirestore();
-
-  const themeDocRef = useMemoFirebase(() => {
-    if (!firestore || !schoolId) return null;
-    return doc(firestore, 'schools', schoolId, 'config', 'theme');
-  }, [firestore, schoolId]);
-
-  const { data: theme } = useDoc<Theme>(themeDocRef);
+  const [theme] = useLocalStorage<Theme | null>(`${THEME_KEY_PREFIX}${schoolId}`, null);
   
   useEffect(() => {
     const root = document.documentElement;

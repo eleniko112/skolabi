@@ -11,11 +11,11 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save, Music, KeyRound, Image as ImageIcon, Building, Volume2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { School, SchoolSettings } from '@/lib/types';
+import { getSchoolById, updateSchool } from '@/lib/schools';
+import { School } from '@/lib/types';
+import { getSettings, setSettings, defaultSettings } from '@/lib/settings';
+import { addHistoryLog } from '@/lib/history';
 import { Separator } from '../ui/separator';
-import { useDoc, useFirestore, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
-import { doc, collection } from 'firebase/firestore';
-
 
 interface SettingsEditorProps {
     schoolId: string;
@@ -27,10 +27,6 @@ const bellSoundOptions = [
   { value: 'chime', label: 'წკარუნი' },
   { value: 'short-beep', label: 'მოკლე სიგნალი' },
 ];
-
-const defaultSettings: SchoolSettings = {
-  bellSound: 'default',
-};
 
 // Combined schema for all settings
 const settingsSchema = z.object({
@@ -91,21 +87,8 @@ const playBellSound = (sound: string) => {
 
 export function SettingsEditor({ schoolId }: SettingsEditorProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  const firestore = useFirestore();
-
-  const settingsDocRef = useMemoFirebase(() => {
-    if (!firestore || !schoolId) return null;
-    return doc(firestore, 'schools', schoolId, 'config', 'settings');
-  }, [firestore, schoolId]);
-
-  const schoolDocRef = useMemoFirebase(() => {
-    if (!firestore || !schoolId) return null;
-    return doc(firestore, 'schools', schoolId);
-  }, [firestore, schoolId]);
-
-  const { data: settings, isLoading: isLoadingSettings } = useDoc<SchoolSettings>(settingsDocRef);
-  const { data: school, isLoading: isLoadingSchool } = useDoc<School>(schoolDocRef);
 
   const form = useForm<z.infer<typeof settingsSchema>>({
     resolver: zodResolver(settingsSchema),
@@ -119,8 +102,11 @@ export function SettingsEditor({ schoolId }: SettingsEditorProps) {
   });
 
   useEffect(() => {
+    const settings = getSettings(schoolId);
+    const school = getSchoolById(schoolId);
+
     if (settings) {
-        form.setValue('bellSound', settings.bellSound || defaultSettings.bellSound);
+        form.setValue('bellSound', settings.bellSound);
     }
     if (school) {
         form.setValue('schoolName', school.name);
@@ -128,38 +114,32 @@ export function SettingsEditor({ schoolId }: SettingsEditorProps) {
         form.setValue('adminPin', school.adminPin || '');
         form.setValue('boardPassword', school.password || '');
     }
-  }, [settings, school, form]);
-
-  const historyCollectionRef = useMemoFirebase(() => {
-    if (!firestore || !schoolId) return null;
-    return collection(firestore, `schools/${schoolId}/history`);
-  }, [firestore, schoolId]);
+    setIsLoading(false);
+  }, [schoolId, form]);
 
   function onSubmit(values: z.infer<typeof settingsSchema>) {
-    if (!settingsDocRef || !schoolDocRef) return;
-
     setIsSubmitting(true);
     
     // Update general settings
-    const generalSettings: SchoolSettings = { bellSound: values.bellSound };
-    updateDocumentNonBlocking(settingsDocRef, generalSettings);
+    setSettings(schoolId, { bellSound: values.bellSound });
 
     // Update school-specific data
-    const schoolData = {
-        name: values.schoolName,
-        logoUrl: values.logoUrl,
-        adminPin: values.adminPin,
-        password: values.boardPassword,
-    };
-    updateDocumentNonBlocking(schoolDocRef, schoolData);
-    
-    if (historyCollectionRef) {
-        addDocumentNonBlocking(historyCollectionRef, {
-            action: "პარამეტრების შენახვა",
-            details: "ზოგადი და სკოლის პარამეტრები განახლდა.",
-            timestamp: new Date().toISOString(),
-        });
+    const currentSchool = getSchoolById(schoolId);
+    if(currentSchool) {
+        const updatedSchoolData: School = {
+            ...currentSchool,
+            name: values.schoolName,
+            logoUrl: values.logoUrl,
+            adminPin: values.adminPin,
+            password: values.boardPassword,
+        };
+        updateSchool(updatedSchoolData);
     }
+    
+    addHistoryLog(schoolId, {
+        action: "პარამეტრების შენახვა",
+        details: "ზოგადი და სკოლის პარამეტრები განახლდა.",
+    });
 
     toast({
         title: "პარამეტრები შენახულია",
@@ -168,8 +148,6 @@ export function SettingsEditor({ schoolId }: SettingsEditorProps) {
 
     setIsSubmitting(false);
   }
-
-  const isLoading = isLoadingSettings || isLoadingSchool;
 
   if (isLoading) {
     return (

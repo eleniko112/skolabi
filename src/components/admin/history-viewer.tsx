@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { getHistory, clearHistory } from '@/lib/history';
 import { History, Trash2, Calendar, Edit, ShieldAlert, Palette, Settings, Loader2 } from 'lucide-react';
 import { HistoryLog } from '@/lib/types';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -18,10 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, getDocs, writeBatch } from 'firebase/firestore';
-
+} from "@/components/ui/alert-dialog"
 
 interface HistoryViewerProps {
     schoolId: string;
@@ -37,36 +35,19 @@ const getActionIcon = (action: string) => {
 }
 
 export function HistoryViewer({ schoolId }: HistoryViewerProps) {
+    const [history, setHistory] = useState<HistoryLog[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const { toast } = useToast();
-    const firestore = useFirestore();
 
-    const historyCollectionRef = useMemoFirebase(() => {
-      if (!firestore || !schoolId) return null;
-      return collection(firestore, 'schools', schoolId, 'history');
-    }, [firestore, schoolId]);
+    useEffect(() => {
+        setHistory(getHistory(schoolId));
+        setIsLoading(false);
+    }, [schoolId]);
 
-    const historyQuery = useMemoFirebase(() => {
-        if (!historyCollectionRef) return null;
-        return query(historyCollectionRef, orderBy('timestamp', 'desc'));
-    }, [historyCollectionRef]);
-
-    const { data: history, isLoading } = useCollection<HistoryLog>(historyQuery);
-
-    const handleClearHistory = async () => {
-        if (!historyCollectionRef) return;
-        
-        const snapshot = await getDocs(historyCollectionRef);
-        const batch = writeBatch(firestore);
-        snapshot.docs.forEach(doc => {
-            batch.delete(doc.ref);
-        });
-        
-        try {
-            await batch.commit();
-            toast({ title: "ისტორია გასუფთავდა" });
-        } catch (error) {
-            toast({ title: "შეცდომა", description: "ისტორიის გასუფთავება ვერ მოხერხდა", variant: "destructive" });
-        }
+    const handleClearHistory = () => {
+        clearHistory(schoolId);
+        setHistory([]);
+        toast({ title: "ისტორია გასუფთავდა" });
     }
 
     return (
@@ -78,7 +59,7 @@ export function HistoryViewer({ schoolId }: HistoryViewerProps) {
                 </div>
                 <AlertDialog>
                     <AlertDialogTrigger asChild>
-                        <Button variant="destructive" disabled={!history || history.length === 0}>
+                        <Button variant="destructive" disabled={history.length === 0}>
                             <Trash2 className="mr-2 h-4 w-4" />
                             ისტორიის გასუფთავება
                         </Button>
@@ -103,7 +84,7 @@ export function HistoryViewer({ schoolId }: HistoryViewerProps) {
                         <Loader2 className="h-8 w-8 animate-spin" />
                     </div>
                 )}
-                {!isLoading && history && history.length > 0 ? (
+                {!isLoading && history.length > 0 ? (
                     <ul className="space-y-4 max-h-[60vh] overflow-y-auto pr-4">
                         {history.map(log => (
                             <li key={log.id} className="flex items-start gap-4 pb-4 border-b last:border-b-0">

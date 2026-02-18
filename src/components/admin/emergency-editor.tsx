@@ -12,10 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save, Siren } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { useDoc, useFirestore, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
-import { doc, collection } from 'firebase/firestore';
-import { EmergencyState } from '@/lib/types';
-
+import { getEmergencyState, setEmergencyState, defaultState } from '@/lib/emergency';
+import { addHistoryLog } from '@/lib/history';
 
 interface EmergencyEditorProps {
     schoolId: string;
@@ -30,52 +28,29 @@ type EmergencyFormState = z.infer<typeof emergencySchema>;
 
 export function EmergencyEditor({ schoolId }: EmergencyEditorProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [isDocLoading, setIsDocLoading] = useState(true);
   const { toast } = useToast();
-  const firestore = useFirestore();
-
-  const emergencyDocRef = useMemoFirebase(() => {
-    if (!firestore || !schoolId) return null;
-    return doc(firestore, 'schools', schoolId, 'config', 'emergency');
-  }, [firestore, schoolId]);
-
-  const { data: emergencyState, isLoading: isDocLoading } = useDoc<EmergencyState>(emergencyDocRef);
 
   const form = useForm<EmergencyFormState>({
     resolver: zodResolver(emergencySchema),
-    defaultValues: {
-        active: false,
-        message: 'ყურადღება! სასწავლო პროცესი შეწყვეტილია. გთხოვთ, შეინარჩუნოთ სიმშვიდე და მიჰყვეთ ინსტრუქციებს.',
-    },
+    defaultValues: defaultState,
   });
 
   useEffect(() => {
-    if (emergencyState) {
-        form.reset(emergencyState);
-    }
-  }, [emergencyState, form]);
-  
-  const historyCollectionRef = useMemoFirebase(() => {
-      if (!firestore || !schoolId) return null;
-      return collection(firestore, `schools/${schoolId}/history`);
-  }, [firestore, schoolId]);
-
+    const state = getEmergencyState(schoolId);
+    form.reset(state);
+    setIsDocLoading(false);
+  }, [schoolId, form]);
 
   const isActive = form.watch('active');
 
   function onSubmit(values: EmergencyFormState) {
-    if (!emergencyDocRef) return;
     setIsLoading(true);
-
-    updateDocumentNonBlocking(emergencyDocRef, values);
-    
-    if (historyCollectionRef) {
-        addDocumentNonBlocking(historyCollectionRef, {
-            action: "საგანგებო რეჟიმის განახლება",
-            details: values.active ? `გააქტიურდა შეტყობინებით: "${values.message}"` : "რეჟიმი გამოირთო",
-            timestamp: new Date().toISOString(),
-        });
-    }
-
+    setEmergencyState(schoolId, values);
+    addHistoryLog(schoolId, {
+        action: "საგანგებო რეჟიმის განახლება",
+        details: values.active ? `გააქტიურდა შეტყობინებით: "${values.message}"` : "რეჟიმი გამოირთო",
+    });
     toast({
         title: "პარამეტრები შენახულია",
         description: "საგანგებო რეჟიმის სტატუსი განახლდა.",

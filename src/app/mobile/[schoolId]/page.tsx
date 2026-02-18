@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import { Announcement, School, SchedulePeriod } from '@/lib/types';
@@ -8,58 +8,42 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Megaphone, Loader2, School as SchoolIcon } from 'lucide-react';
+import { getSchoolById } from '@/lib/schools';
+import { getAnnouncements } from '@/lib/announcements';
+import { getSchedule } from '@/lib/schedule';
 import { EmergencyOverlay } from '@/components/board/emergency-overlay';
-import { useDoc, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, collection, query, where } from 'firebase/firestore';
 
 export default function MobileSchoolPage() {
     const params = useParams<{ schoolId: string }>();
     const schoolId = params.schoolId;
-    const firestore = useFirestore();
 
-    // School data
-    const schoolDocRef = useMemoFirebase(() => {
-        if (!firestore || !schoolId) return null;
-        return doc(firestore, 'schools', schoolId);
-    }, [firestore, schoolId]);
-    const { data: school, isLoading: isSchoolLoading } = useDoc<School>(schoolDocRef);
+    const [school, setSchool] = useState<School | null>(null);
+    const [schedule, setSchedule] = useState<SchedulePeriod[]>([]);
+    const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    // Schedule data
-    const scheduleDocRef = useMemoFirebase(() => {
-        if (!firestore || !schoolId) return null;
-        return doc(firestore, 'schools', schoolId, 'config', 'schedule');
-    }, [firestore, schoolId]);
-    const { data: scheduleData, isLoading: isScheduleLoading } = useDoc<{ periods: SchedulePeriod[] }>(scheduleDocRef);
-    const schedule = scheduleData?.periods || [];
+    useEffect(() => {
+        if (schoolId) {
+            setSchool(getSchoolById(schoolId));
+            setSchedule(getSchedule(schoolId));
+            setAnnouncements(getAnnouncements(schoolId));
+            setLoading(false);
+        }
+    }, [schoolId]);
 
-    // Announcements data
-    const announcementsQuery = useMemoFirebase(() => {
-        if (!firestore || !schoolId) return null;
-        const today = new Date().toISOString().split('T')[0];
-        return query(
-            collection(firestore, 'schools', schoolId, 'announcements'),
-            where('isActive', '==', true),
-            where('startDate', '<=', today)
-        );
-    }, [firestore, schoolId]);
-    const { data: announcements, isLoading: isAnnouncementsLoading } = useCollection<Announcement>(announcementsQuery);
-    
-    const activeAnnouncements = useMemo(() => {
-        if (!announcements) return [];
+    const activeAnnouncements = announcements.filter(ann => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        return announcements.filter(ann => {
-            try {
-                const endDate = new Date(ann.endDate);
-                endDate.setHours(0,0,0,0);
-                return endDate >= today;
-            } catch (e) {
-                return false;
-            }
-        });
-    }, [announcements]);
-
-    const loading = isSchoolLoading || isScheduleLoading || isAnnouncementsLoading;
+        try {
+            const startDate = new Date(ann.startDate);
+            const endDate = new Date(ann.endDate);
+            startDate.setHours(0,0,0,0);
+            endDate.setHours(0,0,0,0);
+            return ann.isActive && startDate <= today && endDate >= today;
+        } catch(e) {
+            return false;
+        }
+    });
 
     if (loading || !schoolId) {
         return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;

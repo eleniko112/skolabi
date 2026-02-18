@@ -10,10 +10,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save, PlusCircle, Trash2 } from 'lucide-react';
+import { getSchedule, setSchedule, defaultSchedule } from '@/lib/schedule';
+import { addHistoryLog } from '@/lib/history';
 import { SchedulePeriod } from '@/lib/types';
-import { useDoc, useFirestore, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
-import { doc, collection } from 'firebase/firestore';
-
 
 interface ScheduleEditorProps {
     schoolId: string;
@@ -31,34 +30,10 @@ const scheduleSchema = z.object({
 
 type ScheduleFormValues = z.infer<typeof scheduleSchema>;
 
-const defaultSchedule: SchedulePeriod[] = [
-    { startTime: '09:00', endTime: '09:45', label: '1-ლი გაკვეთილი' },
-    { startTime: '09:45', endTime: '10:00', label: 'დასვენება' },
-    { startTime: '10:00', endTime: '10:45', label: 'მე-2 გაკვეთილი' },
-    { startTime: '10:45', endTime: '11:00', label: 'დასვენება' },
-    { startTime: '11:00', endTime: '11:45', label: 'მე-3 გაკვეთილი' },
-    { startTime: '11:45', endTime: '12:00', label: 'დასვენება' },
-    { startTime: '12:00', endTime: '12:45', label: 'მე-4 გაკვეთილი' },
-    { startTime: '12:45', endTime: '13:30', label: 'დიდი დასვენება' },
-    { startTime: '13:30', endTime: '14:15', label: 'მე-5 გაკვეთილი' },
-    { startTime: '14:15', endTime: '14:30', label: 'დასვენება' },
-    { startTime: '14:30', endTime: '15:15', label: 'მე-6 გაკვეთილი' },
-    { startTime: '15:15', endTime: '15:30', label: 'დასვენება' },
-    { startTime: '15:30', endTime: '16:15', label: 'მე-7 გაკვეთილი' },
-    { startTime: '16:15', endTime: '16:15', label: 'გაკვეთილები დასრულდა' },
-];
-
 export function ScheduleEditor({ schoolId }: ScheduleEditorProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [isDocLoading, setIsDocLoading] = useState(true);
   const { toast } = useToast();
-  const firestore = useFirestore();
-
-  const scheduleDocRef = useMemoFirebase(() => {
-    if (!firestore || !schoolId) return null;
-    return doc(firestore, 'schools', schoolId, 'config', 'schedule');
-  }, [firestore, schoolId]);
-
-  const { data: scheduleData, isLoading: isDocLoading } = useDoc<{ periods: SchedulePeriod[] }>(scheduleDocRef);
 
   const form = useForm<ScheduleFormValues>({
     resolver: zodResolver(scheduleSchema),
@@ -73,43 +48,24 @@ export function ScheduleEditor({ schoolId }: ScheduleEditorProps) {
   });
 
   useEffect(() => {
-    const schedule = scheduleData?.periods;
-    if (schedule) {
-        form.reset({ periods: schedule });
-    } else {
-        form.reset({ periods: defaultSchedule });
-    }
-  }, [scheduleData, form]);
-
-  const historyCollectionRef = useMemoFirebase(() => {
-      if (!firestore || !schoolId) return null;
-      return collection(firestore, `schools/${schoolId}/history`);
-  }, [firestore, schoolId]);
+    const schedule = getSchedule(schoolId);
+    form.reset({ periods: schedule });
+    setIsDocLoading(false);
+  }, [schoolId, form]);
 
   function onSubmit(values: ScheduleFormValues) {
-    if (!scheduleDocRef) return;
     setIsLoading(true);
-
     const sortedSchedule = [...values.periods].sort((a, b) => a.startTime.localeCompare(b.startTime));
-    const finalValues = { periods: sortedSchedule };
-    
-    updateDocumentNonBlocking(scheduleDocRef, finalValues);
-
-    form.reset(finalValues);
-    
-    if (historyCollectionRef) {
-        addDocumentNonBlocking(historyCollectionRef, {
-            action: "განრიგის განახლება",
-            details: `განრიგი განახლდა ${finalValues.periods.length} პერიოდით.`,
-            timestamp: new Date().toISOString(),
-        });
-    }
-
+    setSchedule(schoolId, sortedSchedule);
+    form.reset({ periods: sortedSchedule });
+    addHistoryLog(schoolId, {
+        action: "განრიგის განახლება",
+        details: `განრიგი განახლდა ${sortedSchedule.length} პერიოდით.`,
+    });
     toast({
         title: "განრიგი შენახულია",
         description: "განახლებული ზარების განრიგი აისახა დაფაზე.",
     });
-
     setIsLoading(false);
   }
 

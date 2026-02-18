@@ -7,7 +7,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Building, KeyRound, Loader2 } from 'lucide-react';
 import type { School } from '@/lib/types';
-import { type WithId } from '@/firebase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
@@ -29,7 +28,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 
 interface SchoolSelectorProps {
-  schools: WithId<School>[];
+  schools: School[];
 }
 
 const passwordSchema = z.object({
@@ -37,7 +36,7 @@ const passwordSchema = z.object({
 });
 
 export function SchoolSelector({ schools }: SchoolSelectorProps) {
-  const [selectedSchool, setSelectedSchool] = useState<WithId<School> | null>(null);
+  const [selectedSchool, setSelectedSchool] = useState<School | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
@@ -49,7 +48,7 @@ export function SchoolSelector({ schools }: SchoolSelectorProps) {
     },
   });
 
-  const handleSchoolSelect = (school: WithId<School>) => {
+  const handleSchoolSelect = (school: School) => {
     setSelectedSchool(school);
     form.reset();
   };

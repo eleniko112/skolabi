@@ -1,32 +1,25 @@
 "use client"; 
 
+import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { AdminDashboard } from '@/components/admin/admin-dashboard';
-import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { getSchoolById } from '@/lib/schools';
 import { School } from '@/lib/types';
-import { Loader2 } from 'lucide-react';
-
 
 export default function AdminPage() {
   const params = useParams<{ schoolId: string }>();
   const schoolId = params.schoolId;
-  const firestore = useFirestore();
+  const [schoolInfo, setSchoolInfo] = useState<School | null>(null);
 
-  const schoolDocRef = useMemoFirebase(() => {
-    if (!firestore || !schoolId) return null;
-    return doc(firestore, 'schools', schoolId);
-  }, [firestore, schoolId]);
+  useEffect(() => {
+    if (schoolId) {
+      const foundSchool = getSchoolById(schoolId);
+      setSchoolInfo(foundSchool);
+    }
+  }, [schoolId]);
 
-  const { data: schoolInfo, isLoading } = useDoc<School>(schoolDocRef);
-
-
-  if (isLoading || !schoolId) {
-    return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
-  }
-  
-  if (schoolInfo === null) {
-      return <div className="flex min-h-screen items-center justify-center"><p>School not found.</p></div>;
+  if (!schoolInfo) {
+    return <div className="flex min-h-screen items-center justify-center"><p>სკოლა არ მოიძებნა.</p></div>;
   }
 
   return (
