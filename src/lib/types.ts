@@ -6,11 +6,6 @@ export interface School {
   password?: string;
   adminPin?: string;
   logoUrl?: string;
-  theme?: {
-    primary: string;
-    background: string;
-    accent: string;
-  };
 }
 
 export interface Bell {
@@ -43,4 +38,31 @@ export interface HistoryLog {
   timestamp: string; // ISO string
   action: string;
   details: string;
+}
+
+export interface WithId<T> {
+    id: string;
+    [key: string]: any;
+}
+
+
+export type SchedulePeriod = {
+  startTime: string;
+  endTime: string;
+  label: string;
+};
+
+export interface Theme {
+  background: string; // HSL format: "H S% L%"
+  primary: string;    // HSL format: "H S% L%"
+  accent: string;     // HSL format: "H S% L%"
+}
+
+export interface SchoolSettings {
+  bellSound: string;
+}
+
+export interface EmergencyState {
+  active: boolean;
+  message: string;
 }
