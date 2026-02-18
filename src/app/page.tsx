@@ -11,9 +11,10 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Initialize with default schools if none are in local storage
-    getSchools(true); 
-    setSchools(getSchools());
+    // getSchools(true) will initialize schools if they don't exist
+    // and then return the full list.
+    const allSchools = getSchools(true);
+    setSchools(allSchools);
     setIsLoading(false);
   }, []);
 
