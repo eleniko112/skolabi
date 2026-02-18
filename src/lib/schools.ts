@@ -5,7 +5,7 @@ import { getSchedule } from './schedule';
 import { getTheme } from './theme';
 import { getSettings } from './settings';
 
-const SCHOOLS_KEY = 'school-board-schools';
+const SCHOOLS_KEY = 'school-board-schools-v2';
 
 const defaultSchools: School[] = [
   { 
