@@ -3,7 +3,7 @@ import { PlaceHolderImages } from './placeholder-images';
 
 export const ANNOUNCEMENTS_KEY_PREFIX = 'school-board-announcements-';
 
-const defaultAnnouncements: Omit<Announcement, 'id' | 'createdAt' | 'isActive'>[] = [
+const getDefaultAnnouncements = (): Omit<Announcement, 'id' | 'createdAt' | 'isActive'>[] => [
     {
       title: 'ტრენინგი AI-ზე და ჩვენს მიდგომაზე',
       content: 'დღეს, 15:00 საათზე, სააქტო დარბაზში გაიმართება საინტერესო ტრენინგი ხელოვნურ ინტელექტზე. განვიხილავთ თანამედროვე ტექნოლოგიებს და მათ გამოყენებას განათლებაში. დასწრება თავისუფალია.',
@@ -36,7 +36,8 @@ export const getAnnouncements = (schoolId: string, initialize = false): Announce
     let announcements = JSON.parse(storage.getItem(key) || 'null') as Announcement[] | null;
 
     if ((!announcements || announcements.length === 0) && initialize) {
-        announcements = defaultAnnouncements.map((ann, index) => ({
+        const defaultData = getDefaultAnnouncements();
+        announcements = defaultData.map((ann, index) => ({
             ...ann,
             id: `${Date.now()}-${index}`,
             createdAt: new Date().toISOString(),

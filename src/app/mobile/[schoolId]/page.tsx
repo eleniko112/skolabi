@@ -26,7 +26,7 @@ export default function MobileSchoolPage() {
         if (schoolId) {
             setSchool(getSchoolById(schoolId));
             setSchedule(getSchedule(schoolId));
-            setAnnouncements(getAnnouncements(schoolId));
+            setAnnouncements(getAnnouncements(schoolId, true));
             setLoading(false);
         }
     }, [schoolId]);
