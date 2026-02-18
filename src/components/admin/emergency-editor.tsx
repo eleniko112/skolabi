@@ -128,7 +128,6 @@ export function EmergencyEditor({ schoolId }: EmergencyEditorProps) {
                     <Textarea
                       placeholder="შეიყვანეთ საგანგებო შეტყობინების ტექსტი..."
                       className="min-h-[100px]"
-                      disabled={!isActive}
                       {...field}
                     />
                   </FormControl>
