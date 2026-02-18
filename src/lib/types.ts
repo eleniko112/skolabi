@@ -1,7 +1,6 @@
 import type { Timestamp } from 'firebase/firestore';
 
 export interface School {
-  id: string;
   name: string;
   password?: string;
   adminPin?: string;
@@ -9,14 +8,12 @@ export interface School {
 }
 
 export interface Bell {
-  id:string;
   time: string; // "HH:MM"
   label: string; // e.g., "1st Lesson Start", "Break End"
   sound: string; // "default.mp3"
 }
 
 export interface Announcement {
-  id: string;
   title: string;
   content: string;
   imageUrl: string;
@@ -34,17 +31,10 @@ export interface EmergencyAnnouncement {
 }
 
 export interface HistoryLog {
-  id: string;
   timestamp: string; // ISO string
   action: string;
   details: string;
 }
-
-export interface WithId<T> {
-    id: string;
-    [key: string]: any;
-}
-
 
 export type SchedulePeriod = {
   startTime: string;

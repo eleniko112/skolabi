@@ -6,7 +6,8 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Building, KeyRound, Loader2 } from 'lucide-react';
-import type { School, WithId } from '@/lib/types';
+import type { School } from '@/lib/types';
+import { type WithId } from '@/firebase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,

@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { History, Trash2, Calendar, Edit, ShieldAlert, Palette, Settings, Loader2 } from 'lucide-react';
-import { HistoryLog, WithId } from '@/lib/types';
+import { HistoryLog } from '@/lib/types';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ka } from 'date-fns/locale';
 import {
@@ -19,7 +19,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, type WithId } from '@/firebase';
 import { collection, query, orderBy, doc, writeBatch } from 'firebase/firestore';
 
 
@@ -50,7 +50,7 @@ export function HistoryViewer({ schoolId }: HistoryViewerProps) {
         return query(historyCollectionRef, orderBy('timestamp', 'desc'));
     }, [historyCollectionRef]);
 
-    const { data: history, isLoading } = useCollection<WithId<HistoryLog>>(historyQuery);
+    const { data: history, isLoading } = useCollection<HistoryLog>(historyQuery);
 
     const handleClearHistory = async () => {
         if (!firestore || !history) return;

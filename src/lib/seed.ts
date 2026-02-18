@@ -3,7 +3,7 @@ import { School, Announcement, SchedulePeriod } from './types';
 import { PlaceHolderImages } from './placeholder-images';
 
 // Default Schools Data
-const defaultSchools: Omit<School, 'id'>[] = [
+const defaultSchools: School[] = [
   { 
     name: '1-ლი საჯარო სკოლა', 
     password: '1111', 
@@ -25,7 +25,7 @@ const defaultSchools: Omit<School, 'id'>[] = [
 ];
 
 // Default Announcements Data
-const defaultAnnouncements: Omit<Announcement, 'id' | 'createdAt' | 'isActive'>[] = [
+const defaultAnnouncements: Omit<Announcement, 'createdAt' | 'isActive'>[] = [
     {
       title: 'ტრენინგი AI-ზე და ჩვენს მიდგომაზე',
       content: 'დღეს, 15:00 საათზე, სააქტო დარბაზში გაიმართება საინტერესო ტრენინგი ხელოვნურ ინტელექტზე. განვიხილავთ თანამედროვე ტექნოლოგიებს და მათ გამოყენებას განათლებაში. დასწრება თავისუფალია.',
@@ -86,19 +86,15 @@ export async function seedInitialData(db: Firestore): Promise<void> {
 
   // 1. Seed Schools
   // We use the school name as the document ID for simplicity in this seed script
-  const schoolRefs = defaultSchools.map(schoolData => {
+  for (const schoolData of defaultSchools) {
     const schoolId = schoolData.name.replace(/\s+/g, '-').toLowerCase();
     const schoolRef = doc(db, 'schools', schoolId);
     batch.set(schoolRef, schoolData);
-    return { ...schoolData, id: schoolId, ref: schoolRef };
-  });
 
-  // 2. For each school, seed subcollections
-  for (const school of schoolRefs) {
-      
+    // 2. For each school, seed subcollections
     // Seed Announcements for each school
     defaultAnnouncements.forEach(announcementData => {
-      const announcementRef = doc(collection(db, 'schools', school.id, 'announcements'));
+      const announcementRef = doc(collection(db, 'schools', schoolId, 'announcements'));
       const newAnnouncement = {
           ...announcementData,
           isActive: true,
@@ -108,19 +104,19 @@ export async function seedInitialData(db: Firestore): Promise<void> {
     });
 
     // Seed Schedule for each school in a single document
-    const scheduleRef = doc(db, 'schools', school.id, 'config', 'schedule');
+    const scheduleRef = doc(db, 'schools', schoolId, 'config', 'schedule');
     batch.set(scheduleRef, { periods: defaultSchedule });
 
     // Seed Theme
-    const themeRef = doc(db, 'schools', school.id, 'config', 'theme');
+    const themeRef = doc(db, 'schools', schoolId, 'config', 'theme');
     batch.set(themeRef, defaultTheme);
     
     // Seed Settings
-    const settingsRef = doc(db, 'schools', school.id, 'config', 'settings');
+    const settingsRef = doc(db, 'schools', schoolId, 'config', 'settings');
     batch.set(settingsRef, defaultSettings);
 
     // Seed Emergency State
-    const emergencyRef = doc(db, 'schools', school.id, 'config', 'emergency');
+    const emergencyRef = doc(db, 'schools', schoolId, 'config', 'emergency');
     batch.set(emergencyRef, defaultEmergencyState);
   }
 
