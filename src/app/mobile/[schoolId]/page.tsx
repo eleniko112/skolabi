@@ -31,21 +31,10 @@ export default function MobileSchoolPage() {
         }
     }, [schoolId]);
 
+    const todayString = new Date().toISOString().split('T')[0];
     const activeAnnouncements = announcements.filter(ann => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        try {
-            // Correct way to parse YYYY-MM-DD to avoid timezone issues
-            const [startY, startM, startD] = ann.startDate.split('-').map(Number);
-            const startDate = new Date(startY, startM - 1, startD);
-
-            const [endY, endM, endD] = ann.endDate.split('-').map(Number);
-            const endDate = new Date(endY, endM - 1, endD);
-            
-            return ann.isActive && startDate <= today && endDate >= today;
-        } catch(e) {
-            return false;
-        }
+        if (!ann.startDate || !ann.endDate) return false;
+        return ann.isActive && ann.startDate <= todayString && ann.endDate >= todayString;
     });
 
     if (loading || !schoolId) {
