@@ -1,7 +1,7 @@
 import { Announcement } from './types';
 import { PlaceHolderImages } from './placeholder-images';
 
-export const ANNOUNCEMENTS_KEY_PREFIX = 'school-board-announcements-v2-';
+export const ANNOUNCEMENTS_KEY_PREFIX = 'school-board-announcements-v3-';
 
 function getLocalIsoDate(date: Date): string {
     const year = date.getFullYear();
@@ -11,13 +11,12 @@ function getLocalIsoDate(date: Date): string {
 }
 
 const getDefaultAnnouncements = (): Omit<Announcement, 'id' | 'createdAt' | 'isActive'>[] => {
-    const today = new Date();
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setFullYear(endDate.getFullYear() + 1);
 
-    const endDate1 = new Date(today);
-    endDate1.setDate(today.getDate() + 7);
-    
-    const endDate2 = new Date(today);
-    endDate2.setDate(today.getDate() + 10);
+    const startDateString = getLocalIsoDate(startDate);
+    const endDateString = getLocalIsoDate(endDate);
     
     return [
     {
@@ -25,16 +24,16 @@ const getDefaultAnnouncements = (): Omit<Announcement, 'id' | 'createdAt' | 'isA
       content: 'დღეს, 15:00 საათზე, სააქტო დარბაზში გაიმართება საინტერესო ტრენინგი ხელოვნურ ინტელექტზე. განვიხილავთ თანამედროვე ტექნოლოგიებს და მათ გამოყენებას განათლებაში. დასწრება თავისუფალია.',
       imageUrl: PlaceHolderImages.find(i => i.id === 'ai-training')?.imageUrl || '',
       imageHint: 'ai technology',
-      startDate: getLocalIsoDate(today),
-      endDate: getLocalIsoDate(endDate1),
+      startDate: startDateString,
+      endDate: endDateString,
     },
     {
       title: 'სასკოლო სპორტული დღე',
       content: 'მომავალ შაბათს, სკოლის სტადიონზე ჩატარდება ყოველწლიური სპორტული დღე. გელოდებით ყველას, მონაწილეობის მისაღებად და თქვენი კლასელების გასამხნევებლად!',
       imageUrl: PlaceHolderImages.find(i => i.id === 'sports-day')?.imageUrl || '',
       imageHint: 'students sports',
-      startDate: getLocalIsoDate(today),
-      endDate: getLocalIsoDate(endDate2),
+      startDate: startDateString,
+      endDate: endDateString,
     },
 ]};
 
