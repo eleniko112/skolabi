@@ -31,6 +31,7 @@ import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '@/com
 import { EmergencyEditor } from './emergency-editor';
 import { ScheduleEditor } from './schedule-editor';
 import { AppearanceEditor } from './appearance-editor';
+import { SettingsEditor } from './settings-editor';
 
 interface AdminDashboardProps {
   schoolId: string;
@@ -151,20 +152,12 @@ export function AdminDashboard({ schoolId, schoolName, adminPin }: AdminDashboar
                     <CardDescription>განხორციელებული ცვლილებების სრული ჩანაწერი.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-muted-foreground">ეს ფუნქციონალი დამუშავების პროცესშია და მალე დაემატება.</p>
+                    <p className="text-muted-foreground">ეს ფუნქციონალი დამუშავების პროცესშია. აქ გამოჩნდება ადმინისტრატორების მიერ განხორციელებული ყველა მნიშვნელოვანი ცვლილების ისტორია, როგორიცაა განცხადების დამატება, განრიგის ცვლილება და ა.შ.</p>
                 </CardContent>
             </Card>
         </TabsContent>
         <TabsContent value="settings" className="mt-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Settings className="h-5 w-5"/> ზოგადი პარამეტრები</CardTitle>
-                    <CardDescription>სკოლის დაფის ზოგადი პარამეტრების მართვა.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-muted-foreground">ეს ფუნქციონალი დამუშავების პროცესშია და მალე დაემატება. აქ შეძლებთ სკოლის სახელის, პაროლის და სხვა მონაცემების ცვლილებას.</p>
-                </CardContent>
-            </Card>
+          <SettingsEditor schoolId={schoolId} />
         </TabsContent>
       </Tabs>
     </div>
