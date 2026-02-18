@@ -10,8 +10,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['"PT Sans"', 'sans-serif'],
-        headline: ['"Montserrat"', 'sans-serif'],
+        body: ['"BPG Nino Mtavruli Bold"', 'sans-serif'],
+        headline: ['"BPG Nino Mtavruli Bold"', 'sans-serif'],
         code: ['monospace'],
       },
       colors: {
