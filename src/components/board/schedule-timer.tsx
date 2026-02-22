@@ -181,7 +181,7 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
                 <Bell className="h-5 w-5" />
                 <p className="text-base font-semibold">შემდეგი: {nextPeriodLabel}</p>
             </div>
-            <p className="text-6xl font-bold text-primary tracking-tighter tabular-nums">
+            <p className="text-8xl font-bold text-primary tracking-tighter tabular-nums">
                 {String(minutesLeft).padStart(2, '0')}:{String(secondsLeft).padStart(2, '0')}
             </p>
             <Progress value={progress} className="mt-4 h-2" />
