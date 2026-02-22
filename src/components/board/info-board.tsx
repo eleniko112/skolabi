@@ -9,7 +9,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from '@/components/ui/carousel';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Autoplay from "embla-carousel-autoplay"
 import { getAnnouncements, initializeAnnouncements, ANNOUNCEMENTS_KEY_PREFIX } from '@/lib/announcements';
 import { Announcement } from '@/lib/types';
@@ -21,7 +21,6 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
     useEffect(() => {
         const loadAnnouncements = () => {
             let active = getAnnouncements(schoolId, true);
-            
             // If no active announcements are found, it might be because the data is stale or doesn't exist.
             // Let's re-initialize and try again.
             if (active.length === 0) {
@@ -49,8 +48,14 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
 
   if (activeAnnouncements.length === 0) {
     return (
-        <Card className="h-full w-full shadow-xl overflow-hidden rounded-xl">
-            <CardContent className="p-0 h-full flex items-center justify-center bg-muted/20">
+        <Card className="h-full w-full shadow-xl rounded-xl flex flex-col">
+             <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-primary font-headline">
+                    <Megaphone className="h-6 w-6"/>
+                    განცხადებები
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 h-full flex items-center justify-center bg-muted/20 flex-grow">
                 <div className="text-center text-muted-foreground">
                     <Megaphone className="h-16 w-16 mx-auto mb-4" />
                     <h2 className="text-2xl font-semibold font-headline">ამჟამად აქტიური განცხადებები არ არის</h2>
@@ -62,56 +67,65 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
   }
 
   return (
-    <Card className="h-full w-full shadow-xl overflow-hidden rounded-xl">
-      <CardContent className="p-0 h-full">
-        <Carousel 
-            className="w-full h-full"
-            plugins={[
-                Autoplay({
-                  delay: 7000,
-                  stopOnInteraction: true,
-                }),
-            ]}
-            opts={{
-                loop: activeAnnouncements.length > 1,
-            }}
-        >
-          <CarouselContent className="h-full">
-            {activeAnnouncements.map((ann) => {
-              return (
-                <CarouselItem key={ann.id} className="h-full">
-                  <div className="relative w-full h-full">
-                    {ann.imageUrl && (
-                      <Image
-                        src={ann.imageUrl}
-                        alt={ann.title}
-                        fill
-                        className="object-cover"
-                        data-ai-hint={ann.imageHint}
-                        priority
-                      />
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent" />
-                    <div className="absolute inset-0 flex flex-col justify-end p-8 md:p-12 text-white">
-                        <h2 className="text-4xl md:text-6xl font-bold font-headline drop-shadow-2xl animate-in fade-in-5 slide-in-from-bottom-5 duration-500">
-                            {ann.title}
-                        </h2>
-                        <p className="mt-4 text-xl max-w-4xl drop-shadow-xl animate-in fade-in-5 slide-in-from-bottom-3 duration-500 delay-200">
-                            {ann.content}
-                        </p>
-                    </div>
-                  </div>
-                </CarouselItem>
-              );
-            })}
-          </CarouselContent>
-          {activeAnnouncements.length > 1 && (
-            <>
-              <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 text-white bg-black/30 hover:bg-black/50 border-none h-12 w-12" />
-              <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 text-white bg-black/30 hover:bg-black/50 border-none h-12 w-12" />
-            </>
-          )}
-        </Carousel>
+    <Card className="h-full w-full shadow-xl rounded-xl flex flex-col overflow-hidden">
+        <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-primary font-headline">
+                <Megaphone className="h-6 w-6"/>
+                განცხადებები
+            </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0 flex-grow relative">
+            <Carousel 
+                className="w-full h-full"
+                plugins={[
+                    Autoplay({
+                      delay: 7000,
+                      stopOnInteraction: true,
+                    }),
+                ]}
+                opts={{
+                    loop: activeAnnouncements.length > 1,
+                }}
+            >
+              <CarouselContent className="h-full">
+                {activeAnnouncements.map((ann, index) => {
+                  return (
+                    <CarouselItem key={ann.id} className="h-full">
+                      <div className="flex flex-col h-full w-full">
+                        {ann.imageUrl && (
+                          <div className="w-full aspect-video relative overflow-hidden flex-shrink-0">
+                            <Image
+                              src={ann.imageUrl}
+                              alt={ann.title}
+                              fill
+                              className="object-cover"
+                              data-ai-hint={ann.imageHint}
+                              priority={index === 0}
+                            />
+                          </div>
+                        )}
+                        <div className="p-4 md:p-6 flex-grow flex flex-col space-y-2 overflow-hidden">
+                            <h2 className="text-2xl md:text-3xl font-bold font-headline text-foreground flex-shrink-0">
+                                {ann.title}
+                            </h2>
+                            <div className="flex-grow overflow-y-auto pr-2">
+                                <p className="text-base text-muted-foreground">
+                                    {ann.content}
+                                </p>
+                            </div>
+                        </div>
+                      </div>
+                    </CarouselItem>
+                  );
+                })}
+              </CarouselContent>
+              {activeAnnouncements.length > 1 && (
+                <>
+                  <CarouselPrevious className="absolute left-4 top-[35%] -translate-y-1/2 z-10 h-10 w-10 bg-background/50 hover:bg-background/80" />
+                  <CarouselNext className="absolute right-4 top-[35%] -translate-y-1/2 z-10 h-10 w-10 bg-background/50 hover:bg-background/80" />
+                </>
+              )}
+            </Carousel>
       </CardContent>
     </Card>
   );
