@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { QrCode, Smartphone } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Button } from '../ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 
 export function QRCodeDisplay({ schoolId }: { schoolId: string }) {
   const [qrCodeUrl, setQrCodeUrl] = useState('');
@@ -11,36 +12,41 @@ export function QRCodeDisplay({ schoolId }: { schoolId: string }) {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const mobileUrl = `${window.location.origin}/mobile/${schoolId}`;
-      const generatedQrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=128x128&data=${encodeURIComponent(mobileUrl)}&qzone=1&bgcolor=F0F4F8`;
+      const generatedQrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(mobileUrl)}&qzone=1&bgcolor=F0F4F8`;
       setQrCodeUrl(generatedQrCodeUrl);
     }
   }, [schoolId]);
 
   return (
-    <div className="fixed bottom-4 right-4 z-10">
-      <Card className="w-auto shadow-2xl rounded-lg bg-card/80 backdrop-blur-sm">
-        <CardHeader className="p-3">
-          <CardTitle className="text-xs font-semibold flex items-center gap-2">
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="icon">
+          <QrCode className="h-5 w-5" />
+          <span className="sr-only">QR კოდი მობილური ვერსიისთვის</span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-4">
+        <div className="text-center space-y-2">
+          <h3 className="text-sm font-semibold flex items-center justify-center gap-2 text-foreground">
             <Smartphone className="h-4 w-4" />
             მობილური ვერსია
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-3 pt-0">
+          </h3>
           {qrCodeUrl ? (
             <Image
               src={qrCodeUrl}
               alt="QR Code for mobile version"
-              width={128}
-              height={128}
-              className="rounded-md"
+              width={100}
+              height={100}
+              className="rounded-md mx-auto"
             />
           ) : (
-            <div className="w-32 h-32 bg-muted rounded-md flex items-center justify-center">
+            <div className="w-24 h-24 bg-muted rounded-md flex items-center justify-center mx-auto">
               <QrCode className="h-8 w-8 text-muted-foreground animate-pulse" />
             </div>
           )}
-        </CardContent>
-      </Card>
-    </div>
+          <p className="text-xs text-muted-foreground">დაასკანერეთ კოდი</p>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }

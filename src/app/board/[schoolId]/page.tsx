@@ -48,20 +48,21 @@ export default function BoardPage() {
           )}
           <h1 className="text-3xl font-bold font-headline text-primary">{schoolInfo.name}</h1>
         </div>
-        <Button asChild variant="outline" size="icon">
-          <Link href={`/board/${schoolId}/admin`}>
-            <Settings className="h-6 w-6" />
-            <span className="sr-only">ადმინის პანელი</span>
-          </Link>
-        </Button>
+        <div className="flex items-center gap-4">
+          <QRCodeDisplay schoolId={schoolId} />
+          <Button asChild variant="outline" size="icon">
+            <Link href={`/board/${schoolId}/admin`}>
+              <Settings className="h-6 w-6" />
+              <span className="sr-only">ადმინის პანელი</span>
+            </Link>
+          </Button>
+        </div>
       </header>
       
       <main className="flex-grow p-6 grid grid-cols-1 md:grid-cols-[40%_1fr] gap-6">
         <ScheduleTimer schoolId={schoolId} />
         <InfoBoard schoolId={schoolId} />
       </main>
-      
-      <QRCodeDisplay schoolId={schoolId} />
     </div>
   );
 }
