@@ -194,7 +194,7 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
           {processedSchedule.map((item, index) => (
             <div key={index} className={cn("flex items-center justify-between p-3 rounded-md transition-colors", item.isCurrent && "bg-primary/10")}>
                 <span className={cn("font-medium", item.isCurrent ? "text-primary" : "text-muted-foreground")}>{item.label}</span>
-                <Badge variant={item.isCurrent ? "default" : "outline"} className="tabular-nums">{item.startTime} - {item.endTime}</Badge>
+                <Badge variant={item.isCurrent ? "default" : "outline"} className="tabular-nums text-base">{item.startTime} - {item.endTime}</Badge>
             </div>
           ))}
         </div>
