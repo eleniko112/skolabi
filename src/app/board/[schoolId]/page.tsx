@@ -56,7 +56,7 @@ export default function BoardPage() {
         </Button>
       </header>
       
-      <main className="flex-grow p-6 grid grid-cols-1 md:grid-cols-2 gap-6 overflow-hidden">
+      <main className="flex-grow p-6 grid grid-cols-1 md:grid-cols-[2fr_3fr] gap-6 overflow-hidden">
         <ScheduleTimer schoolId={schoolId} />
         <InfoBoard schoolId={schoolId} />
       </main>
