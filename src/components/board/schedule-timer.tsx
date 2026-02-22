@@ -168,20 +168,20 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
   const nextPeriodLabel = nextBell?.label || 'დღე დასრულდა';
 
   return (
-    <Card className="shadow-xl rounded-xl flex flex-col h-full overflow-hidden">
+    <Card className="shadow-xl rounded-xl flex flex-col h-full md:h-auto md:max-h-[80vh] lg:h-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-3 text-primary font-headline text-2xl">
           <Clock className="h-6 w-6" />
           ზარების განრიგი
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6 flex-grow flex flex-col pt-6 min-h-0">
+      <CardContent className="space-y-6 flex-grow flex flex-col pt-6">
         <div className="text-center p-6 bg-primary/5 rounded-lg border">
             <div className="flex items-center justify-center gap-2 text-accent">
                 <Bell className="h-5 w-5" />
                 <p className="text-base font-semibold">შემდეგი: {nextPeriodLabel}</p>
             </div>
-            <p className="text-7xl font-bold text-primary tracking-tighter tabular-nums">
+            <p className="text-6xl font-bold text-primary tracking-tighter tabular-nums">
                 {String(minutesLeft).padStart(2, '0')}:{String(secondsLeft).padStart(2, '0')}
             </p>
             <Progress value={progress} className="mt-4 h-2" />
@@ -190,7 +190,7 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
 
         <Separator />
 
-        <div className="space-y-2 flex-1 overflow-y-auto pr-2">
+        <div className="space-y-2 flex-1">
           {processedSchedule.map((item, index) => (
             <div key={index} className={cn("flex items-center justify-between p-3 rounded-md transition-colors", item.isCurrent && "bg-primary/10")}>
                 <span className={cn("font-medium", item.isCurrent ? "text-primary" : "text-muted-foreground")}>{item.label}</span>

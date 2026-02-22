@@ -52,7 +52,7 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
                     განცხადებები
                 </CardTitle>
             </CardHeader>
-            <CardContent className="p-6 h-full flex items-center justify-center bg-muted/20 flex-grow">
+            <CardContent className="h-full flex items-center justify-center bg-muted/20 flex-grow">
                 <div className="text-center text-muted-foreground">
                     <Megaphone className="h-16 w-16 mx-auto mb-4" />
                     <h2 className="text-2xl font-semibold font-headline">ამჟამად აქტიური განცხადებები არ არის</h2>
@@ -64,14 +64,14 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
   }
 
   return (
-    <Card className="w-full shadow-xl rounded-xl flex flex-col overflow-hidden h-full">
+    <Card className="w-full shadow-xl rounded-xl flex flex-col overflow-hidden h-full md:h-auto md:max-h-[80vh] lg:h-full">
         <CardHeader>
             <CardTitle className="flex items-center gap-2 text-primary font-headline">
                 <Megaphone className="h-6 w-6"/>
                 განცხადებები
             </CardTitle>
         </CardHeader>
-        <CardContent className="p-0 flex-grow relative min-h-0">
+        <CardContent className="p-0 flex-grow relative">
             <Carousel 
                 className="w-full h-full"
                 plugins={[
@@ -101,7 +101,7 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
                             />
                           </div>
                         )}
-                        <div className="p-4 md:p-6 flex-grow flex flex-col space-y-2 overflow-y-auto">
+                        <div className="p-4 md:p-6 flex-grow flex flex-col space-y-2">
                             <h2 className="text-2xl md:text-3xl font-bold font-headline text-foreground flex-shrink-0">
                                 {ann.title}
                             </h2>
