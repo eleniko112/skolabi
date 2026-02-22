@@ -19,14 +19,14 @@ type ProcessedLesson = {
 };
 
 const LoadingState = () => (
-    <Card className="h-full shadow-xl rounded-xl">
+    <Card className="shadow-xl rounded-xl h-96 md:h-full flex flex-col">
         <CardHeader>
             <CardTitle className="flex items-center gap-3 text-primary font-headline text-2xl">
                 <Clock className="h-6 w-6" />
                 ზარების განრიგი
             </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6 pt-6 flex items-center justify-center">
+        <CardContent className="space-y-6 pt-6 flex-grow flex items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin" />
         </CardContent>
     </Card>
@@ -142,14 +142,14 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
 
   if(!nextBell || !prevBell || timerSchedule.length === 0) {
     return (
-        <Card className="h-full shadow-xl rounded-xl">
+        <Card className="shadow-xl rounded-xl h-96 md:h-full flex flex-col">
             <CardHeader>
                 <CardTitle className="flex items-center gap-3 text-primary font-headline text-2xl">
                     <Clock className="h-6 w-6" />
                     ზარების განრიგი
                 </CardTitle>
             </CardHeader>
-            <CardContent className='pt-6'>
+            <CardContent className='pt-6 flex-grow flex items-center justify-center'>
                 <p className="text-muted-foreground text-center">განრიგი ცარიელია ან არასწორად არის დაკონფიგურირებული.</p>
             </CardContent>
         </Card>
@@ -168,7 +168,7 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
   const nextPeriodLabel = nextBell?.label || 'დღე დასრულდა';
 
   return (
-    <Card className="h-full shadow-xl rounded-xl flex flex-col">
+    <Card className="shadow-xl rounded-xl flex flex-col md:h-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-3 text-primary font-headline text-2xl">
           <Clock className="h-6 w-6" />

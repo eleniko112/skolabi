@@ -48,7 +48,7 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
 
   if (activeAnnouncements.length === 0) {
     return (
-        <Card className="h-full w-full shadow-xl rounded-xl flex flex-col">
+        <Card className="w-full shadow-xl rounded-xl flex flex-col h-96 md:h-full">
              <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-primary font-headline">
                     <Megaphone className="h-6 w-6"/>
@@ -67,7 +67,7 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
   }
 
   return (
-    <Card className="h-full w-full shadow-xl rounded-xl flex flex-col overflow-hidden">
+    <Card className="w-full shadow-xl rounded-xl flex flex-col overflow-hidden h-[80vh] md:h-full">
         <CardHeader>
             <CardTitle className="flex items-center gap-2 text-primary font-headline">
                 <Megaphone className="h-6 w-6"/>
