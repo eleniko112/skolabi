@@ -8,7 +8,7 @@ import { InfoBoard } from '@/components/board/info-board';
 import { ScheduleTimer } from '@/components/board/schedule-timer';
 import { QRCodeDisplay } from '@/components/board/qr-code-display';
 import Image from 'next/image';
-import { Settings, School as SchoolIcon } from 'lucide-react';
+import { Settings, School as SchoolIcon, Home } from 'lucide-react';
 import { getSchoolById } from '@/lib/schools';
 import { School } from '@/lib/types';
 import { EmergencyOverlay } from '@/components/board/emergency-overlay';
@@ -50,6 +50,12 @@ export default function BoardPage() {
         </div>
         <div className="flex items-center gap-4">
           <QRCodeDisplay schoolId={schoolId} />
+          <Button asChild variant="outline" size="icon">
+            <Link href="/">
+              <Home className="h-6 w-6" />
+              <span className="sr-only">მთავარი გვერდი</span>
+            </Link>
+          </Button>
           <Button asChild variant="outline" size="icon">
             <Link href={`/board/${schoolId}/admin`}>
               <Settings className="h-6 w-6" />
