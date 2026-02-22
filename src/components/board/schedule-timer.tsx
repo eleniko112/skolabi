@@ -19,7 +19,7 @@ type ProcessedLesson = {
 };
 
 const LoadingState = () => (
-    <Card className="shadow-xl rounded-xl h-full flex flex-col">
+    <Card className="shadow-xl rounded-xl flex flex-col">
         <CardHeader>
             <CardTitle className="flex items-center gap-3 text-primary font-headline text-2xl">
                 <Clock className="h-6 w-6" />
@@ -142,7 +142,7 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
 
   if(!nextBell || !prevBell || timerSchedule.length === 0) {
     return (
-        <Card className="shadow-xl rounded-xl h-full flex flex-col">
+        <Card className="shadow-xl rounded-xl flex flex-col">
             <CardHeader>
                 <CardTitle className="flex items-center gap-3 text-primary font-headline text-2xl">
                     <Clock className="h-6 w-6" />
@@ -168,7 +168,7 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
   const nextPeriodLabel = nextBell?.label || 'დღე დასრულდა';
 
   return (
-    <Card className="shadow-xl rounded-xl flex flex-col h-full md:h-auto md:max-h-[80vh] lg:h-full">
+    <Card className="shadow-xl rounded-xl flex flex-col">
       <CardHeader>
         <CardTitle className="flex items-center gap-3 text-primary font-headline text-2xl">
           <Clock className="h-6 w-6" />

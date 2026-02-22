@@ -45,14 +45,14 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
 
   if (activeAnnouncements.length === 0) {
     return (
-        <Card className="w-full shadow-xl rounded-xl flex flex-col h-full">
+        <Card className="w-full shadow-xl rounded-xl flex flex-col">
              <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-primary font-headline">
                     <Megaphone className="h-6 w-6"/>
                     განცხადებები
                 </CardTitle>
             </CardHeader>
-            <CardContent className="h-full flex items-center justify-center bg-muted/20 flex-grow">
+            <CardContent className="flex items-center justify-center bg-muted/20 flex-grow p-6">
                 <div className="text-center text-muted-foreground">
                     <Megaphone className="h-16 w-16 mx-auto mb-4" />
                     <h2 className="text-2xl font-semibold font-headline">ამჟამად აქტიური განცხადებები არ არის</h2>
@@ -64,7 +64,7 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
   }
 
   return (
-    <Card className="w-full shadow-xl rounded-xl flex flex-col overflow-hidden h-full md:h-auto md:max-h-[80vh] lg:h-full">
+    <Card className="w-full shadow-xl rounded-xl flex flex-col overflow-hidden">
         <CardHeader>
             <CardTitle className="flex items-center gap-2 text-primary font-headline">
                 <Megaphone className="h-6 w-6"/>
@@ -73,7 +73,7 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
         </CardHeader>
         <CardContent className="p-0 flex-grow relative">
             <Carousel 
-                className="w-full h-full"
+                className="w-full"
                 plugins={[
                     Autoplay({
                       delay: 7000,
@@ -84,11 +84,11 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
                     loop: activeAnnouncements.length > 1,
                 }}
             >
-              <CarouselContent className="h-full">
+              <CarouselContent>
                 {activeAnnouncements.map((ann, index) => {
                   return (
-                    <CarouselItem key={ann.id} className="h-full">
-                      <div className="flex flex-col h-full w-full">
+                    <CarouselItem key={ann.id}>
+                      <div className="flex flex-col w-full">
                         {ann.imageUrl && (
                           <div className="w-full aspect-video relative overflow-hidden flex-shrink-0 bg-muted">
                             <Image
