@@ -21,8 +21,6 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
     useEffect(() => {
         const loadAnnouncements = () => {
             let active = getAnnouncements(schoolId, true);
-            // If no active announcements are found, it might be because the data is stale or doesn't exist.
-            // Let's re-initialize and try again.
             if (active.length === 0) {
                 initializeAnnouncements(schoolId);
                 active = getAnnouncements(schoolId, true);
@@ -34,7 +32,6 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
 
         const handleStorageChange = (event: StorageEvent) => {
             if (event.key === `${ANNOUNCEMENTS_KEY_PREFIX}${schoolId}`) {
-                // Just get the latest active announcements on any change.
                 setActiveAnnouncements(getAnnouncements(schoolId, true));
             }
         };
@@ -48,7 +45,7 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
 
   if (activeAnnouncements.length === 0) {
     return (
-        <Card className="w-full shadow-xl rounded-xl flex flex-col h-96 md:h-full">
+        <Card className="w-full shadow-xl rounded-xl flex flex-col h-full">
              <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-primary font-headline">
                     <Megaphone className="h-6 w-6"/>
@@ -67,14 +64,14 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
   }
 
   return (
-    <Card className="w-full shadow-xl rounded-xl flex flex-col overflow-hidden h-[80vh] md:h-full">
+    <Card className="w-full shadow-xl rounded-xl flex flex-col overflow-hidden h-full">
         <CardHeader>
             <CardTitle className="flex items-center gap-2 text-primary font-headline">
                 <Megaphone className="h-6 w-6"/>
                 განცხადებები
             </CardTitle>
         </CardHeader>
-        <CardContent className="p-0 flex-grow relative">
+        <CardContent className="p-0 flex-grow relative min-h-0">
             <Carousel 
                 className="w-full h-full"
                 plugins={[
@@ -93,7 +90,7 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
                     <CarouselItem key={ann.id} className="h-full">
                       <div className="flex flex-col h-full w-full">
                         {ann.imageUrl && (
-                          <div className="w-full aspect-video relative overflow-hidden flex-shrink-0">
+                          <div className="w-full aspect-video relative overflow-hidden flex-shrink-0 bg-muted">
                             <Image
                               src={ann.imageUrl}
                               alt={ann.title}
@@ -104,15 +101,13 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
                             />
                           </div>
                         )}
-                        <div className="p-4 md:p-6 flex-grow flex flex-col space-y-2 overflow-hidden">
+                        <div className="p-4 md:p-6 flex-grow flex flex-col space-y-2 overflow-y-auto">
                             <h2 className="text-2xl md:text-3xl font-bold font-headline text-foreground flex-shrink-0">
                                 {ann.title}
                             </h2>
-                            <div className="flex-grow overflow-y-auto pr-2">
-                                <p className="text-base text-muted-foreground">
-                                    {ann.content}
-                                </p>
-                            </div>
+                            <p className="text-base text-muted-foreground">
+                                {ann.content}
+                            </p>
                         </div>
                       </div>
                     </CarouselItem>
@@ -121,8 +116,8 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
               </CarouselContent>
               {activeAnnouncements.length > 1 && (
                 <>
-                  <CarouselPrevious className="absolute left-4 top-[35%] -translate-y-1/2 z-10 h-10 w-10 bg-background/50 hover:bg-background/80" />
-                  <CarouselNext className="absolute right-4 top-[35%] -translate-y-1/2 z-10 h-10 w-10 bg-background/50 hover:bg-background/80" />
+                  <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 bg-background/50 hover:bg-background/80" />
+                  <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 bg-background/50 hover:bg-background/80" />
                 </>
               )}
             </Carousel>

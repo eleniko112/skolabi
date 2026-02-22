@@ -19,7 +19,7 @@ type ProcessedLesson = {
 };
 
 const LoadingState = () => (
-    <Card className="shadow-xl rounded-xl h-96 md:h-full flex flex-col">
+    <Card className="shadow-xl rounded-xl h-full flex flex-col">
         <CardHeader>
             <CardTitle className="flex items-center gap-3 text-primary font-headline text-2xl">
                 <Clock className="h-6 w-6" />
@@ -142,7 +142,7 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
 
   if(!nextBell || !prevBell || timerSchedule.length === 0) {
     return (
-        <Card className="shadow-xl rounded-xl h-96 md:h-full flex flex-col">
+        <Card className="shadow-xl rounded-xl h-full flex flex-col">
             <CardHeader>
                 <CardTitle className="flex items-center gap-3 text-primary font-headline text-2xl">
                     <Clock className="h-6 w-6" />
@@ -168,14 +168,14 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
   const nextPeriodLabel = nextBell?.label || 'დღე დასრულდა';
 
   return (
-    <Card className="shadow-xl rounded-xl flex flex-col md:h-full">
+    <Card className="shadow-xl rounded-xl flex flex-col h-full overflow-hidden">
       <CardHeader>
         <CardTitle className="flex items-center gap-3 text-primary font-headline text-2xl">
           <Clock className="h-6 w-6" />
           ზარების განრიგი
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6 flex-grow flex flex-col pt-6">
+      <CardContent className="space-y-6 flex-grow flex flex-col pt-6 min-h-0">
         <div className="text-center p-6 bg-primary/5 rounded-lg border">
             <div className="flex items-center justify-center gap-2 text-accent">
                 <Bell className="h-5 w-5" />

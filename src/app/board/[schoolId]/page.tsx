@@ -29,7 +29,7 @@ export default function BoardPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex flex-col h-screen bg-background overflow-hidden">
       <EmergencyOverlay schoolId={schoolId} />
       <header className="flex-shrink-0 flex items-center justify-between p-4 border-b bg-card shadow-sm z-20">
         <div className="flex items-center gap-4">
@@ -59,7 +59,7 @@ export default function BoardPage() {
         </div>
       </header>
       
-      <main className="flex-grow p-6 grid grid-cols-1 md:grid-cols-[40%_1fr] gap-6">
+      <main className="flex-grow p-6 grid grid-cols-1 md:grid-cols-[40%_60%] gap-6 min-h-0">
         <ScheduleTimer schoolId={schoolId} />
         <InfoBoard schoolId={schoolId} />
       </main>
