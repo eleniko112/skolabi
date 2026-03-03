@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useParams } from 'next/navigation';
@@ -83,7 +82,7 @@ export default function BoardPage() {
         </div>
       </header>
       
-      <main className="flex-1 p-6 grid grid-cols-1 md:grid-cols-[50%_50%] gap-6 overflow-y-auto">
+      <main className="flex-1 p-6 grid grid-cols-1 md:grid-cols-[30%_70%] gap-6 overflow-y-auto">
         <ScheduleTimer schoolId={schoolId} />
         <InfoBoard schoolId={schoolId} />
       </main>
