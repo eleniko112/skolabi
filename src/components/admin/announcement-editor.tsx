@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, PlusCircle, BookText, Trash2, CalendarIcon } from 'lucide-react';
-import { getAnnouncements, addAnnouncement, deleteAnnouncement, updateAnnouncement } from '@/lib/announcements';
+import { addAnnouncement, deleteAnnouncement, updateAnnouncement } from '@/lib/announcements';
 import {
   Table,
   TableBody,
@@ -28,6 +28,8 @@ import { format } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { cn } from '@/lib/utils';
 import { Calendar } from '../ui/calendar';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy } from 'firebase/firestore';
 
 interface AnnouncementEditorProps {
     schoolId: string;
@@ -47,15 +49,19 @@ const announcementSchema = z.object({
 
 
 export function AnnouncementEditor({ schoolId }: AnnouncementEditorProps) {
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const firestore = useFirestore();
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
-    setAnnouncements(getAnnouncements(schoolId));
-    setIsLoading(false);
-  }, [schoolId]);
+  const announcementsQuery = useMemoFirebase(() => {
+    if (!firestore || !schoolId) return null;
+    return query(
+        collection(firestore, 'schools', schoolId, 'announcements'),
+        orderBy('createdAt', 'desc')
+    );
+  }, [firestore, schoolId]);
+
+  const { data: announcements, isLoading } = useCollection<Announcement>(announcementsQuery);
 
   const form = useForm<z.infer<typeof announcementSchema>>({
     resolver: zodResolver(announcementSchema),
@@ -88,36 +94,30 @@ export function AnnouncementEditor({ schoolId }: AnnouncementEditorProps) {
   }
 
   function onSubmit(values: z.infer<typeof announcementSchema>) {
-    addAnnouncement(schoolId, { 
+    if (!firestore) return;
+    addAnnouncement(firestore, schoolId, { 
         ...values, 
         startDate: format(values.startDate, 'yyyy-MM-dd'),
         endDate: format(values.endDate, 'yyyy-MM-dd'),
     });
-    setAnnouncements(getAnnouncements(schoolId));
-    addHistoryLog(schoolId, { action: "განცხადების დამატება", details: `დაემატა ახალი განცხადება: "${values.title}"` });
+    addHistoryLog(firestore, schoolId, { action: "განცხადების დამატება", details: `დაემატა ახალი განცხადება: "${values.title}"`, adminIdentifier: "admin" });
     toast({ title: "განცხადება შენახულია", description: "თქვენი ცვლილებები აისახა დაფაზე." });
     form.reset();
   }
 
-  const handleDelete = (announcementId: string) => {
-    const ann = announcements.find(a => a.id === announcementId);
-    if(ann) {
-        addHistoryLog(schoolId, { action: "განცხადების წაშლა", details: `წაიშალა განცხადება: "${ann.title}"` });
-    }
-    deleteAnnouncement(schoolId, announcementId);
-    setAnnouncements(getAnnouncements(schoolId));
+  const handleDelete = (announcement: Announcement) => {
+    if (!firestore) return;
+    addHistoryLog(firestore, schoolId, { action: "განცხადების წაშლა", details: `წაიშალა განცხადება: "${announcement.title}"`, adminIdentifier: "admin" });
+    deleteAnnouncement(firestore, schoolId, announcement.id);
     toast({ title: "განცხადება წაიშალა" });
   }
 
-  const handleToggleActive = (announcementId: string, isActive: boolean) => {
-    const ann = announcements.find(a => a.id === announcementId);
-     if (ann) {
-      const updatedAnnouncement = { ...ann, isActive };
-      updateAnnouncement(schoolId, updatedAnnouncement);
-      setAnnouncements(getAnnouncements(schoolId));
-      addHistoryLog(schoolId, { action: "განცხადების სტატუსის ცვლილება", details: `განცხადების "${ann.title}" სტატუსი შეიცვალა: ${isActive ? 'აქტიური' : 'არააქტიური'}` });
-      toast({ title: 'სტატუსი განახლდა' });
-    }
+  const handleToggleActive = (ann: Announcement, isActive: boolean) => {
+    if (!firestore) return;
+    const updatedAnnouncement = { ...ann, isActive };
+    updateAnnouncement(firestore, schoolId, updatedAnnouncement);
+    addHistoryLog(firestore, schoolId, { action: "განცხადების სტატუსის ცვლილება", details: `განცხადების "${ann.title}" სტატუსი შეიცვალა: ${isActive ? 'აქტიური' : 'არააქტიური'}`, adminIdentifier: "admin" });
+    toast({ title: 'სტატუსი განახლდა' });
   }
 
   return (
@@ -147,12 +147,12 @@ export function AnnouncementEditor({ schoolId }: AnnouncementEditorProps) {
                                     </TableCell>
                                 </TableRow>
                             )}
-                            {announcements.map(ann => (
+                            {announcements?.map(ann => (
                                 <TableRow key={ann.id} className={!ann.isActive ? 'bg-muted/50' : ''}>
                                     <TableCell>
                                         <Switch
                                             checked={ann.isActive}
-                                            onCheckedChange={(checked) => handleToggleActive(ann.id, checked)}
+                                            onCheckedChange={(checked) => handleToggleActive(ann, checked)}
                                             aria-label="Toggle announcement"
                                         />
                                     </TableCell>
@@ -160,13 +160,20 @@ export function AnnouncementEditor({ schoolId }: AnnouncementEditorProps) {
                                     <TableCell>{ann.startDate}</TableCell>
                                     <TableCell>{ann.endDate}</TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(ann.id)}>
+                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(ann)}>
                                             <Trash2 className="h-4 w-4 text-destructive" />
                                             <span className="sr-only">წაშლა</span>
                                         </Button>
                                     </TableCell>
                                 </TableRow>
                             ))}
+                            {announcements?.length === 0 && !isLoading && (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                                        განცხადებები არ მოიძებნა.
+                                    </TableCell>
+                                </TableRow>
+                            )}
                         </TableBody>
                     </Table>
                 </CardContent>
@@ -246,7 +253,7 @@ export function AnnouncementEditor({ schoolId }: AnnouncementEditorProps) {
                                 mode="single"
                                 selected={field.value}
                                 onSelect={field.onChange}
-                                disabled={(date) => date < new Date(new Date().setDate(new Date().getDate()-1))}
+                                disabled={(date) => date < new Date(new Date().setHours(0,0,0,0))}
                                 initialFocus
                             />
                             </PopoverContent>

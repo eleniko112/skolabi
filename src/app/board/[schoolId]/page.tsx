@@ -1,31 +1,29 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { InfoBoard } from '@/components/board/info-board';
 import { ScheduleTimer } from '@/components/board/schedule-timer';
 import { QRCodeDisplay } from '@/components/board/qr-code-display';
-import Image from 'next/image';
 import { Settings, School as SchoolIcon, Home, Loader2 } from 'lucide-react';
-import { getSchoolById } from '@/lib/schools';
-import { School } from '@/lib/types';
 import { EmergencyOverlay } from '@/components/board/emergency-overlay';
+import { useDoc, useMemoFirebase, useFirestore } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { School } from '@/lib/types';
 
 export default function BoardPage() {
   const params = useParams<{ schoolId: string }>();
   const schoolId = params.schoolId;
-  const [schoolInfo, setSchoolInfo] = useState<School | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  
-  useEffect(() => {
-    if (schoolId) {
-      const info = getSchoolById(schoolId);
-      setSchoolInfo(info);
-      setIsLoading(false);
-    }
-  }, [schoolId]);
+  const firestore = useFirestore();
+
+  const schoolRef = useMemoFirebase(() => {
+    if (!firestore || !schoolId) return null;
+    return doc(firestore, 'schools', schoolId);
+  }, [firestore, schoolId]);
+
+  const { data: schoolInfo, isLoading } = useDoc<School>(schoolRef);
 
   if (isLoading) {
     return (
@@ -52,13 +50,14 @@ export default function BoardPage() {
       <header className="flex-shrink-0 flex items-center justify-between p-4 border-b bg-card shadow-sm z-20">
         <div className="flex items-center gap-4">
           {schoolInfo.logoUrl ? (
-            <Image
-              src={schoolInfo.logoUrl}
-              alt={`${schoolInfo.name} Logo`}
-              width={50}
-              height={50}
-              className="rounded-full object-cover border-2 border-primary/20"
-            />
+            <div className="relative h-[50px] w-[50px]">
+              <Image
+                src={schoolInfo.logoUrl}
+                alt={`${schoolInfo.name} Logo`}
+                fill
+                className="rounded-full object-cover border-2 border-primary/20"
+              />
+            </div>
           ) : (
              <div className="h-[50px] w-[50px] rounded-full bg-muted flex items-center justify-center border-2 border-primary/20">
                 <SchoolIcon className="h-6 w-6 text-muted-foreground" />

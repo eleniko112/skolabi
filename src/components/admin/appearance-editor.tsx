@@ -10,70 +10,105 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save, RefreshCcw } from 'lucide-react';
-import { getTheme, setTheme, defaultTheme, hslToHex, hexToHsl } from '@/lib/theme';
+import { updateSchool } from '@/lib/schools';
 import { addHistoryLog } from '@/lib/history';
-import { Theme } from '@/lib/types';
+import { School } from '@/lib/types';
+import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { hslToHex, hexToHsl } from '@/lib/theme';
 
 interface AppearanceEditorProps {
     schoolId: string;
 }
 
-const themeSchema = z.object({
-  background: z.string().min(1, "Required"),
-  primary: z.string().min(1, "Required"),
-  accent: z.string().min(1, "Required"),
+const appearanceSchema = z.object({
+  backgroundColor: z.string().min(1, "სავალდებულო ველი"),
+  themeColor: z.string().min(1, "სავალდებულო ველი"),
+  accentColor: z.string().min(1, "სავალდებულო ველი"),
 });
 
 export function AppearanceEditor({ schoolId }: AppearanceEditorProps) {
-  const [isLoading, setIsLoading] = useState(false);
-  const [isDocLoading, setIsDocLoading] = useState(true);
+  const firestore = useFirestore();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  const form = useForm<Theme>({
-    resolver: zodResolver(themeSchema),
-    defaultValues: defaultTheme,
+  const schoolRef = useMemoFirebase(() => {
+    if (!firestore || !schoolId) return null;
+    return doc(firestore, 'schools', schoolId);
+  }, [firestore, schoolId]);
+
+  const { data: school, isLoading } = useDoc<School>(schoolRef);
+
+  const form = useForm({
+    resolver: zodResolver(appearanceSchema),
+    defaultValues: {
+      backgroundColor: "220 20% 97%",
+      themeColor: "221 39% 49%",
+      accentColor: "347 77% 60%",
+    },
   });
 
   useEffect(() => {
-    const currentTheme = getTheme(schoolId);
-    form.reset(currentTheme);
-    setIsDocLoading(false);
-  }, [schoolId, form]);
+    if (school) {
+      form.reset({
+        backgroundColor: school.backgroundColor || "220 20% 97%",
+        themeColor: school.themeColor || "221 39% 49%",
+        accentColor: school.accentColor || "347 77% 60%",
+      });
+    }
+  }, [school, form]);
 
-  function onSubmit(values: Theme) {
-    setIsLoading(true);
-    setTheme(schoolId, values);
-    addHistoryLog(schoolId, {
-        action: "გარეგნობის განახლება", 
-        details: "ძირითადი ფერები შეიცვალა.",
+  function onSubmit(values: any) {
+    if (!firestore || !school) return;
+    setIsSubmitting(true);
+    
+    updateSchool(firestore, {
+        ...school,
+        ...values,
     });
+    
+    addHistoryLog(firestore, schoolId, {
+        action: "გარეგნობის განახლება", 
+        details: "სკოლის თემის ფერები შეიცვალა.",
+        adminIdentifier: "admin"
+    });
+
     toast({
         title: "გარეგნობა შენახულია",
         description: "განახლებული თემა აისახა დაფაზე.",
     });
-    setIsLoading(false);
-    window.location.reload(); // Force a refresh to apply theme
+    setIsSubmitting(false);
   }
   
   const resetTheme = () => {
-    setTheme(schoolId, defaultTheme);
-    form.reset(defaultTheme);
-    addHistoryLog(schoolId, {
+    if (!firestore || !school) return;
+    const defaultColors = {
+        backgroundColor: "220 20% 97%",
+        themeColor: "221 39% 49%",
+        accentColor: "347 77% 60%",
+    };
+    
+    updateSchool(firestore, {
+        ...school,
+        ...defaultColors,
+    });
+    
+    form.reset(defaultColors);
+    
+    addHistoryLog(firestore, schoolId, {
         action: "გარეგნობის განახლება",
         details: "თემა დაუბრუნდა საწყის მდგომარეობას.",
+        adminIdentifier: "admin"
     });
     toast({ title: "თემა საწყის მდგომარეობაში დაბრუნდა" });
-    window.location.reload();
   }
 
-  if(isDocLoading) {
+  if(isLoading) {
       return (
           <Card>
               <CardHeader>
                 <CardTitle>დაფის გარეგნობის რედაქტორი</CardTitle>
-                <CardDescription>
-                შეცვალეთ ძირითადი ფერები (ფონი, მთავარი, აქცენტი). გამოიყენეთ პალიტრა ან შეიყვანეთ ფერი HSL ფორმატში (მაგ: 211 32% 28%).
-                </CardDescription>
+                <CardDescription>იტვირთება...</CardDescription>
               </CardHeader>
               <CardContent className="flex items-center justify-center p-8">
                 <Loader2 className="h-8 w-8 animate-spin" />
@@ -87,7 +122,7 @@ export function AppearanceEditor({ schoolId }: AppearanceEditorProps) {
       <CardHeader>
         <CardTitle>დაფის გარეგნობის რედაქტორი</CardTitle>
         <CardDescription>
-          შეცვალეთ ძირითადი ფერები (ფონი, მთავარი, აქცენტი). გამოიყენეთ პალიტრა ან შეიყვანეთ ფერი HSL ფორმატში (მაგ: 211 32% 28%).
+          შეცვალეთ ძირითადი ფერები (ფონი, მთავარი, აქცენტი). გამოიყენეთ პალიტრა ან შეიყვანეთ ფერი HSL ფორმატში (მაგ: 221 39% 49%).
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -95,7 +130,7 @@ export function AppearanceEditor({ schoolId }: AppearanceEditorProps) {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
-              name="background"
+              name="backgroundColor"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>ფონის ფერი (Background)</FormLabel>
@@ -116,7 +151,7 @@ export function AppearanceEditor({ schoolId }: AppearanceEditorProps) {
             />
             <FormField
               control={form.control}
-              name="primary"
+              name="themeColor"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>მთავარი ფერი (Primary)</FormLabel>
@@ -137,7 +172,7 @@ export function AppearanceEditor({ schoolId }: AppearanceEditorProps) {
             />
             <FormField
               control={form.control}
-              name="accent"
+              name="accentColor"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>აქცენტის ფერი (Accent)</FormLabel>
@@ -161,8 +196,8 @@ export function AppearanceEditor({ schoolId }: AppearanceEditorProps) {
                     <RefreshCcw className="mr-2 h-4 w-4" />
                     საწყისზე დაბრუნება
                 </Button>
-                <Button type="submit" disabled={isLoading}>
-                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                     შენახვა
                 </Button>
             </div>

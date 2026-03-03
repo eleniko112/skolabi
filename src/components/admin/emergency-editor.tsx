@@ -12,8 +12,11 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save, Siren } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { getEmergencyState, setEmergencyState, defaultState } from '@/lib/emergency';
+import { setEmergencyState } from '@/lib/emergency';
 import { addHistoryLog } from '@/lib/history';
+import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { EmergencyState } from '@/lib/types';
 
 interface EmergencyEditorProps {
     schoolId: string;
@@ -27,46 +30,59 @@ const emergencySchema = z.object({
 type EmergencyFormState = z.infer<typeof emergencySchema>;
 
 export function EmergencyEditor({ schoolId }: EmergencyEditorProps) {
-  const [isLoading, setIsLoading] = useState(false);
-  const [isDocLoading, setIsDocLoading] = useState(true);
+  const firestore = useFirestore();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+
+  const emergencyRef = useMemoFirebase(() => {
+    if (!firestore || !schoolId) return null;
+    return doc(firestore, 'schools', schoolId, 'emergencyAnnouncements', 'active');
+  }, [firestore, schoolId]);
+
+  const { data: emergencyData, isLoading } = useDoc<EmergencyState>(emergencyRef);
 
   const form = useForm<EmergencyFormState>({
     resolver: zodResolver(emergencySchema),
-    defaultValues: defaultState,
+    defaultValues: {
+      active: false,
+      message: "ყურადღება! სკოლაში გამოცხადებულია საგანგებო მდგომარეობა. გთხოვთ, მიჰყვეთ ინსტრუქციებს.",
+    },
   });
 
   useEffect(() => {
-    const state = getEmergencyState(schoolId);
-    form.reset(state);
-    setIsDocLoading(false);
-  }, [schoolId, form]);
+    if (emergencyData) {
+      form.reset({
+        active: emergencyData.active,
+        message: emergencyData.message,
+      });
+    }
+  }, [emergencyData, form]);
 
   const isActive = form.watch('active');
 
   function onSubmit(values: EmergencyFormState) {
-    setIsLoading(true);
-    setEmergencyState(schoolId, values);
-    addHistoryLog(schoolId, {
+    if (!firestore) return;
+    setIsSubmitting(true);
+    setEmergencyState(firestore, schoolId, values);
+    addHistoryLog(firestore, schoolId, {
         action: "საგანგებო რეჟიმის განახლება",
         details: values.active ? `გააქტიურდა შეტყობინებით: "${values.message}"` : "რეჟიმი გამოირთო",
+        adminIdentifier: "admin"
     });
     toast({
         title: "პარამეტრები შენახულია",
         description: "საგანგებო რეჟიმის სტატუსი განახლდა.",
         variant: values.active ? 'destructive' : 'default',
     });
-    setIsLoading(false);
+    setIsSubmitting(false);
   }
 
-  if (isDocLoading) {
+  if (isLoading) {
       return (
           <Card>
               <CardHeader>
                   <CardTitle>საგანგებო განცხადების მართვა</CardTitle>
-                  <CardDescription>
-                  აქციეთ საგანგებო რეჟიმი, რათა დაფაზე გამოჩნდეს მნიშვნელოვანი შეტყობინება.
-                  </CardDescription>
+                  <CardDescription>იტვირთება...</CardDescription>
               </CardHeader>
               <CardContent className="flex items-center justify-center p-8">
                 <Loader2 className="h-8 w-8 animate-spin" />
@@ -135,8 +151,8 @@ export function EmergencyEditor({ schoolId }: EmergencyEditorProps) {
               )}
             />
             
-            <Button type="submit" className="w-full" disabled={isLoading || isDocLoading}>
-              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
               შენახვა
             </Button>
           </form>

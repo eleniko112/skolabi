@@ -10,15 +10,18 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save, PlusCircle, Trash2 } from 'lucide-react';
-import { getSchedule, setSchedule, defaultSchedule } from '@/lib/schedule';
+import { setSchedule } from '@/lib/schedule';
 import { addHistoryLog } from '@/lib/history';
 import { SchedulePeriod } from '@/lib/types';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy } from 'firebase/firestore';
 
 interface ScheduleEditorProps {
     schoolId: string;
 }
 
 const scheduleItemSchema = z.object({
+  id: z.string().optional(),
   startTime: z.string().regex(/^\d{2}:\d{2}$/, "დრო უნდა იყოს HH:MM ფორმატში"),
   endTime: z.string().regex(/^\d{2}:\d{2}$/, "დრო უნდა იყოს HH:MM ფორმატში"),
   label: z.string().min(1, "სავალდებულო ველი"),
@@ -31,9 +34,19 @@ const scheduleSchema = z.object({
 type ScheduleFormValues = z.infer<typeof scheduleSchema>;
 
 export function ScheduleEditor({ schoolId }: ScheduleEditorProps) {
-  const [isLoading, setIsLoading] = useState(false);
-  const [isDocLoading, setIsDocLoading] = useState(true);
+  const firestore = useFirestore();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+
+  const lessonsQuery = useMemoFirebase(() => {
+    if (!firestore || !schoolId) return null;
+    return query(
+        collection(firestore, 'schools', schoolId, 'lessons'),
+        orderBy('startTime')
+    );
+  }, [firestore, schoolId]);
+
+  const { data: scheduleData, isLoading } = useCollection<SchedulePeriod>(lessonsQuery);
 
   const form = useForm<ScheduleFormValues>({
     resolver: zodResolver(scheduleSchema),
@@ -48,33 +61,34 @@ export function ScheduleEditor({ schoolId }: ScheduleEditorProps) {
   });
 
   useEffect(() => {
-    const schedule = getSchedule(schoolId);
-    form.reset({ periods: schedule });
-    setIsDocLoading(false);
-  }, [schoolId, form]);
+    if (scheduleData) {
+      form.reset({ periods: scheduleData });
+    }
+  }, [scheduleData, form]);
 
   function onSubmit(values: ScheduleFormValues) {
-    setIsLoading(true);
+    if (!firestore) return;
+    setIsSubmitting(true);
     const sortedSchedule = [...values.periods].sort((a, b) => a.startTime.localeCompare(b.startTime));
-    setSchedule(schoolId, sortedSchedule);
-    form.reset({ periods: sortedSchedule });
-    addHistoryLog(schoolId, {
+    setSchedule(firestore, schoolId, sortedSchedule as SchedulePeriod[]);
+    addHistoryLog(firestore, schoolId, {
         action: "განრიგის განახლება",
         details: `განრიგი განახლდა ${sortedSchedule.length} პერიოდით.`,
+        adminIdentifier: "admin"
     });
     toast({
         title: "განრიგი შენახულია",
         description: "განახლებული ზარების განრიგი აისახა დაფაზე.",
     });
-    setIsLoading(false);
+    setIsSubmitting(false);
   }
 
-  if (isDocLoading) {
+  if (isLoading) {
     return (
         <Card>
             <CardHeader>
                 <CardTitle>ზარების განრიგის რედაქტორი</CardTitle>
-                <CardDescription>დაამატეთ, შეცვალეთ ან წაშალეთ გაკვეთილების და დასვენებების პერიოდები. ცვლილებები ავტომატურად აისახება მთავარ დაფაზე.</CardDescription>
+                <CardDescription>იტვირთება...</CardDescription>
             </CardHeader>
             <CardContent className="flex items-center justify-center p-8">
               <Loader2 className="h-8 w-8 animate-spin" />
@@ -154,17 +168,14 @@ export function ScheduleEditor({ schoolId }: ScheduleEditorProps) {
                 <Button
                     type="button"
                     variant="outline"
-                    onClick={() => append({ startTime: '16:30', endTime: '17:15', label: 'ახალი პერიოდი' })}
+                    onClick={() => append({ startTime: '09:00', endTime: '09:45', label: 'ახალი გაკვეთილი' })}
                 >
                     <PlusCircle className="mr-2 h-4 w-4" />
                     დამატება
                 </Button>
                 <div className='flex items-center gap-2'>
-                    <Button type="button" variant='ghost' onClick={() => form.reset({ periods: defaultSchedule })}>
-                        გადატვირთვა
-                    </Button>
-                    <Button type="submit" disabled={isLoading}>
-                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    <Button type="submit" disabled={isSubmitting}>
+                        {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                         შენახვა
                     </Button>
                 </div>
