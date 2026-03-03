@@ -82,50 +82,59 @@ export function SchoolSelector({ schools }: SchoolSelectorProps) {
   return (
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 px-4">
-        {schools.map((school, index) => (
-          <Card
-            key={school.id}
-            className={cn(
-                "group relative cursor-pointer transition-all duration-500 overflow-hidden",
-                "bg-white/70 backdrop-blur-md hover:bg-white hover:shadow-2xl hover:-translate-y-2",
-                "border-2 border-transparent hover:border-primary/20",
-                "before:absolute before:inset-0 before:bg-gradient-to-br before:opacity-0 before:transition-opacity group-hover:before:opacity-10",
-                index % 3 === 0 ? "before:from-primary before:to-blue-600 border-t-4 border-t-primary" : 
-                index % 3 === 1 ? "before:from-accent before:to-pink-600 border-t-4 border-t-accent" : 
-                "before:from-indigo-500 before:to-purple-600 border-t-4 border-t-indigo-500"
-            )}
-            onClick={() => handleSchoolSelect(school)}
-          >
-            {/* Background highlight pattern */}
-            <div className={cn(
-              "absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150 duration-700 opacity-20",
-              index % 3 === 0 ? "bg-primary" : index % 3 === 1 ? "bg-accent" : "bg-indigo-500"
-            )} />
-            
-            <CardHeader className="items-center text-center p-10 relative z-10">
+        {schools.map((school, index) => {
+          const colorIndex = index % 4;
+          return (
+            <Card
+              key={school.id}
+              className={cn(
+                  "group relative cursor-pointer transition-all duration-500 overflow-hidden",
+                  "bg-white/70 backdrop-blur-md hover:bg-white hover:shadow-2xl hover:-translate-y-2",
+                  "border-2 border-transparent hover:border-primary/20",
+                  "before:absolute before:inset-0 before:bg-gradient-to-br before:opacity-0 before:transition-opacity group-hover:before:opacity-10",
+                  colorIndex === 0 ? "before:from-primary before:to-blue-600 border-t-4 border-t-primary" : 
+                  colorIndex === 1 ? "before:from-accent before:to-rose-600 border-t-4 border-t-accent" : 
+                  colorIndex === 2 ? "before:from-indigo-500 before:to-purple-600 border-t-4 border-t-indigo-500" : 
+                  "before:from-emerald-500 before:to-teal-600 border-t-4 border-t-emerald-500"
+              )}
+              onClick={() => handleSchoolSelect(school)}
+            >
+              {/* Background highlight pattern */}
               <div className={cn(
-                "p-6 rounded-2xl mb-6 transition-all duration-500 shadow-sm",
-                index % 3 === 0 ? "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground" : 
-                index % 3 === 1 ? "bg-accent/10 text-accent group-hover:bg-accent group-hover:text-accent-foreground" : 
-                "bg-indigo-500/10 text-indigo-500 group-hover:bg-indigo-500 group-hover:text-white"
-              )}>
-                <SchoolIcon className="w-14 h-14" />
-              </div>
-              <CardTitle className={cn(
-                "font-headline text-2xl mb-2 transition-colors",
-                index % 3 === 0 ? "group-hover:text-primary" : 
-                index % 3 === 1 ? "group-hover:text-accent" : 
-                "group-hover:text-indigo-600"
-              )}>
-                {school.name}
-              </CardTitle>
-              <div className="flex items-center gap-2 text-muted-foreground text-sm font-medium opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
-                შესვლა <ArrowRight className="w-4 h-4" />
-              </div>
-            </CardHeader>
-            <CardContent></CardContent>
-          </Card>
-        ))}
+                "absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150 duration-700 opacity-20",
+                colorIndex === 0 ? "bg-primary" : 
+                colorIndex === 1 ? "bg-accent" : 
+                colorIndex === 2 ? "bg-indigo-500" : 
+                "bg-emerald-500"
+              )} />
+              
+              <CardHeader className="items-center text-center p-10 relative z-10">
+                <div className={cn(
+                  "p-6 rounded-2xl mb-6 transition-all duration-500 shadow-sm",
+                  colorIndex === 0 ? "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground" : 
+                  colorIndex === 1 ? "bg-accent/10 text-accent group-hover:bg-accent group-hover:text-accent-foreground" : 
+                  colorIndex === 2 ? "bg-indigo-500/10 text-indigo-500 group-hover:bg-indigo-500 group-hover:text-white" : 
+                  "bg-emerald-500/10 text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white"
+                )}>
+                  <SchoolIcon className="w-14 h-14" />
+                </div>
+                <CardTitle className={cn(
+                  "font-headline text-2xl mb-2 transition-colors",
+                  colorIndex === 0 ? "group-hover:text-primary" : 
+                  colorIndex === 1 ? "group-hover:text-accent" : 
+                  colorIndex === 2 ? "group-hover:text-indigo-600" : 
+                  "group-hover:text-emerald-600"
+                )}>
+                  {school.name}
+                </CardTitle>
+                <div className="flex items-center gap-2 text-muted-foreground text-sm font-medium opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
+                  შესვლა <ArrowRight className="w-4 h-4" />
+                </div>
+              </CardHeader>
+              <CardContent></CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       <Dialog open={!!selectedSchool} onOpenChange={() => setSelectedSchool(null)}>
