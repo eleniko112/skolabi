@@ -8,191 +8,119 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { SchedulePeriod } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { getSchedule, SCHEDULE_KEY_PREFIX } from '@/lib/schedule';
-
-
-type ProcessedLesson = {
-    label:string;
-    startTime: string;
-    endTime: string;
-    isCurrent: boolean;
-};
-
-const LoadingState = () => (
-    <Card className="shadow-xl rounded-xl flex flex-col">
-        <CardHeader>
-            <CardTitle className="flex items-center gap-3 text-primary font-headline text-2xl">
-                <Clock className="h-6 w-6" />
-                ზარების განრიგი
-            </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6 pt-6 flex-grow flex items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin" />
-        </CardContent>
-    </Card>
-);
+import { useCollection, useMemoFirebase, useFirestore } from '@/firebase';
+import { collection, query, orderBy } from 'firebase/firestore';
 
 export function ScheduleTimer({ schoolId }: { schoolId: string }) {
-  const [now, setNow] = useState<Date | undefined>();
-  const [schedule, setSchedule] = useState<SchedulePeriod[]>([]);
-  
+  const [now, setNow] = useState<Date>(new Date());
+  const firestore = useFirestore();
+
+  const lessonsQuery = useMemoFirebase(() => {
+    if (!firestore || !schoolId) return null;
+    return query(
+        collection(firestore, 'schools', schoolId, 'lessons'),
+        orderBy('startTime')
+    );
+  }, [firestore, schoolId]);
+
+  const { data: schedule, isLoading } = useCollection<SchedulePeriod>(lessonsQuery);
+
   useEffect(() => {
-    // Initialize schedule and ensure we have the latest.
-    const currentSchedule = getSchedule(schoolId);
-    setSchedule(currentSchedule);
-
     const timer = setInterval(() => setNow(new Date()), 1000);
-    setNow(new Date());
+    return () => clearInterval(timer);
+  }, []);
 
-    // Set up a listener for changes in local storage
-    const handleStorageChange = (event: StorageEvent) => {
-        if (event.key === `${SCHEDULE_KEY_PREFIX}${schoolId}`) {
-            const updatedSchedule = getSchedule(schoolId);
-            setSchedule(updatedSchedule);
-        }
-    };
-    window.addEventListener('storage', handleStorageChange);
+  const currentTimeInMinutes = now.getHours() * 60 + now.getMinutes();
 
-    return () => {
-      clearInterval(timer);
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, [schoolId]);
+  const processedSchedule = useMemo(() => {
+    if (!schedule) return [];
+    return schedule.map(item => {
+        const [startH, startM] = item.startTime.split(':').map(Number);
+        const startTimeInMinutes = startH * 60 + startM;
+        const [endH, endM] = item.endTime.split(':').map(Number);
+        const endTimeInMinutes = endH * 60 + endM;
 
-  const currentTimeInMinutes = now ? now.getHours() * 60 + now.getMinutes() : 0;
-
-  const timerSchedule = useMemo(() => {
-      return schedule.map(period => ({
-          time: period.startTime,
-          label: period.label,
-      })).sort((a,b) => a.time.localeCompare(b.time));
-  }, [schedule]);
-
-
-  const processedSchedule = useMemo((): ProcessedLesson[] => {
-    if (schedule.length === 0) return [];
-
-    return schedule
-        .filter(item => item.label.includes('გაკვეთილი') && !item.label.includes('დასრულდა'))
-        .map(item => {
-            const [startH, startM] = item.startTime.split(':').map(Number);
-            const startTimeInMinutes = startH * 60 + startM;
-            const [endH, endM] = item.endTime.split(':').map(Number);
-            const endTimeInMinutes = endH * 60 + endM;
-
-            const isCurrent = currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes < endTimeInMinutes;
-
-            return {
-                label: item.label,
-                startTime: item.startTime,
-                endTime: item.endTime,
-                isCurrent
-            };
-        });
+        const isCurrent = currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes < endTimeInMinutes;
+        return { ...item, isCurrent };
+    });
   }, [schedule, currentTimeInMinutes]);
 
+  const { nextBell, nextBellTime, prevBell, prevBellTime } = useMemo(() => {
+    if (!schedule || schedule.length === 0) return { nextBell: null, nextBellTime: Infinity, prevBell: null, prevBellTime: -1 };
 
-  if (!now) {
-    return <LoadingState />;
-  }
+    let next = null;
+    let nextTime = Infinity;
+    let prev = null;
+    let prevTime = -1;
 
-  const findNextBell = () => {
-    let nextBell = null;
-    let nextBellTime = Infinity;
+    schedule.forEach(bell => {
+        const [h, m] = bell.startTime.split(':').map(Number);
+        const bellTime = h * 60 + m;
+        
+        if (bellTime > currentTimeInMinutes && bellTime < nextTime) {
+            nextTime = bellTime;
+            next = bell;
+        }
+        if (bellTime <= currentTimeInMinutes && bellTime > prevTime) {
+            prevTime = bellTime;
+            prev = bell;
+        }
+    });
 
-    for (const bell of timerSchedule) {
-      const [h, m] = bell.time.split(':').map(Number);
-      const bellTime = h * 60 + m;
-      if (bellTime > currentTimeInMinutes && bellTime < nextBellTime) {
-        nextBellTime = bellTime;
-        nextBell = bell;
-      }
-    }
-    if (!nextBell && timerSchedule.length > 0) {
-        const [h, m] = timerSchedule[0].time.split(':').map(Number);
-        nextBellTime = (h * 60 + m) + 24 * 60;
-        nextBell = timerSchedule[0];
-    }
-    
-    return { nextBell, nextBellTime };
-  };
+    return { nextBell: next, nextBellTime: nextTime, prevBell: prev, prevBellTime: prevTime };
+  }, [schedule, currentTimeInMinutes]);
 
-  const findPreviousBell = () => {
-    let prevBell = null;
-    let prevBellTime = -1;
-     for (const bell of timerSchedule) {
-      const [h, m] = bell.time.split(':').map(Number);
-      const bellTime = h * 60 + m;
-      if (bellTime <= currentTimeInMinutes && bellTime > prevBellTime) {
-        prevBellTime = bellTime;
-        prevBell = bell;
-      }
-    }
-    if (!prevBell && timerSchedule.length > 0) {
-        const lastBell = timerSchedule[timerSchedule.length - 1];
-        const [h, m] = lastBell.time.split(':').map(Number);
-        prevBellTime = (h * 60 + m) - 24 * 60;
-        prevBell = lastBell;
-    }
-    return { prevBell, prevBellTime };
-  }
-
-  const { nextBell, nextBellTime } = findNextBell();
-  const { prevBell, prevBellTime } = findPreviousBell();
-
-  if(!nextBell || !prevBell || timerSchedule.length === 0) {
+  if (isLoading) {
     return (
-        <Card className="shadow-xl rounded-xl flex flex-col">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-3 text-primary font-headline text-2xl">
-                    <Clock className="h-6 w-6" />
-                    ზარების განრიგი
-                </CardTitle>
-            </CardHeader>
-            <CardContent className='pt-6 flex-grow flex items-center justify-center'>
-                <p className="text-muted-foreground text-center">განრიგი ცარიელია ან არასწორად არის დაკონფიგურირებული.</p>
-            </CardContent>
+        <Card className="shadow-xl rounded-xl flex flex-col h-full">
+            <CardHeader><CardTitle className="text-2xl font-headline"><Clock className="inline mr-2" />განრიგი</CardTitle></CardHeader>
+            <CardContent className="flex items-center justify-center flex-grow"><Loader2 className="animate-spin" /></CardContent>
         </Card>
     );
   }
 
-  const diffSeconds = (nextBellTime * 60 - (currentTimeInMinutes * 60 + now.getSeconds()));
+  if (!schedule || schedule.length === 0) {
+      return (
+          <Card className="shadow-xl rounded-xl flex flex-col">
+              <CardHeader><CardTitle className="text-2xl font-headline"><Clock className="inline mr-2" />განრიგი</CardTitle></CardHeader>
+              <CardContent className="p-6 text-center text-muted-foreground">განრიგი არ არის დამატებული.</CardContent>
+          </Card>
+      );
+  }
+
+  const diffSeconds = nextBell ? (nextBellTime * 60 - (currentTimeInMinutes * 60 + now.getSeconds())) : 0;
   const minutesLeft = Math.floor(diffSeconds / 60);
   const secondsLeft = diffSeconds % 60;
-
-  const totalDuration = (nextBellTime - prevBellTime) * 60;
-  const elapsed = totalDuration > 0 ? totalDuration - diffSeconds : 0;
-  const progress = totalDuration > 0 ? (elapsed / totalDuration) * 100 : 0;
-
-  const currentPeriodLabel = prevBell.label;
-  const nextPeriodLabel = nextBell?.label || 'დღე დასრულდა';
+  const progress = prevBell && nextBell ? ((currentTimeInMinutes * 60 + now.getSeconds() - prevBellTime * 60) / (nextBellTime * 60 - prevBellTime * 60)) * 100 : 0;
 
   return (
-    <Card className="shadow-xl rounded-xl flex flex-col">
+    <Card className="shadow-xl rounded-xl flex flex-col h-full overflow-hidden">
       <CardHeader>
         <CardTitle className="flex items-center gap-3 text-primary font-headline text-2xl">
           <Clock className="h-6 w-6" />
           ზარების განრიგი
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6 flex-grow flex flex-col pt-6">
-        <div className="text-center p-6 bg-primary/5 rounded-lg border">
-            <div className="flex items-center justify-center gap-2 text-accent">
-                <Bell className="h-5 w-5" />
-                <p className="text-base font-semibold">შემდეგი: {nextPeriodLabel}</p>
+      <CardContent className="space-y-6 flex-grow flex flex-col pt-6 overflow-y-auto">
+        {nextBell && (
+            <div className="text-center p-6 bg-primary/5 rounded-lg border">
+                <div className="flex items-center justify-center gap-2 text-accent">
+                    <Bell className="h-5 w-5" />
+                    <p className="text-base font-semibold">შემდეგი: {nextBell.label}</p>
+                </div>
+                <p className="text-6xl font-bold text-primary tracking-tighter tabular-nums">
+                    {String(minutesLeft).padStart(2, '0')}:{String(secondsLeft).padStart(2, '0')}
+                </p>
+                <Progress value={progress} className="mt-4 h-2" />
+                {prevBell && <p className="text-sm text-muted-foreground mt-2">მიმდინარე: {prevBell.label}</p>}
             </div>
-            <p className="text-6xl font-bold text-primary tracking-tighter tabular-nums">
-                {String(minutesLeft).padStart(2, '0')}:{String(secondsLeft).padStart(2, '0')}
-            </p>
-            <Progress value={progress} className="mt-4 h-2" />
-            <p className="text-sm text-muted-foreground mt-2">მიმდინარე: {currentPeriodLabel}</p>
-        </div>
+        )}
 
         <Separator />
 
         <div className="space-y-2 flex-1">
           {processedSchedule.map((item, index) => (
-            <div key={index} className={cn("flex items-center justify-between p-3 rounded-md transition-colors", item.isCurrent && "bg-primary/10")}>
+            <div key={item.id || index} className={cn("flex items-center justify-between p-3 rounded-md transition-colors", item.isCurrent && "bg-primary/10")}>
                 <span className={cn("font-medium", item.isCurrent ? "text-primary" : "text-muted-foreground")}>{item.label}</span>
                 <Badge variant={item.isCurrent ? "default" : "outline"} className="tabular-nums text-base">{item.startTime} - {item.endTime}</Badge>
             </div>

@@ -1,24 +1,22 @@
-
 "use client";
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { SchoolSelector } from '@/components/school-selector';
 import { type School } from '@/lib/types';
 import { Building, Loader2, ShieldAlert } from 'lucide-react';
-import { getSchools } from '@/lib/schools';
 import { Button } from '@/components/ui/button';
+import { useCollection, useMemoFirebase, useFirestore } from '@/firebase';
+import { collection } from 'firebase/firestore';
 
 export default function Home() {
-  const [schools, setSchools] = useState<School[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const firestore = useFirestore();
 
-  useEffect(() => {
-    // getSchools(true) will initialize schools if they don't exist
-    const allSchools = getSchools(true);
-    setSchools(allSchools);
-    setIsLoading(false);
-  }, []);
+  const schoolsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'schools');
+  }, [firestore]);
+
+  const { data: schools, isLoading } = useCollection<School>(schoolsQuery);
 
   if (isLoading) {
     return (
@@ -30,7 +28,7 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-8 relative overflow-hidden">
-      {/* Decorative background elements with more variety */}
+      {/* Decorative background elements */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 rounded-full blur-[120px] pointer-events-none animate-pulse" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent/10 rounded-full blur-[120px] pointer-events-none animate-pulse delay-700" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[60%] bg-indigo-500/5 rounded-full blur-[140px] pointer-events-none" />
@@ -57,7 +55,7 @@ export default function Home() {
       </div>
       
       <div className="relative z-10 w-full max-w-6xl mx-auto">
-        <SchoolSelector schools={schools} />
+        <SchoolSelector schools={schools || []} />
       </div>
     </main>
   );

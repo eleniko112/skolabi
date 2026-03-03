@@ -1,49 +1,28 @@
 "use client";
 
-import { useState, useEffect } from 'react';
 import { Siren, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { getEmergencyKey, type EmergencyState, setEmergencyState as setGlobalEmergencyState, getEmergencyState } from '@/lib/emergency';
-import { addHistoryLog } from '@/lib/history';
-
+import { useDoc, useMemoFirebase, useFirestore } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { EmergencyState } from '@/lib/types';
+import { setEmergencyState } from '@/lib/emergency';
 
 export function EmergencyOverlay({ schoolId }: { schoolId: string }) {
-  const [emergencyState, setEmergencyState] = useState<EmergencyState | null>(null);
-  const [isClient, setIsClient] = useState(false);
+  const firestore = useFirestore();
+  const emergencyRef = useMemoFirebase(() => {
+    if (!firestore || !schoolId) return null;
+    return doc(firestore, 'schools', schoolId, 'emergencyAnnouncements', 'active');
+  }, [firestore, schoolId]);
 
-  useEffect(() => {
-    setIsClient(true);
-    // Initialize state on mount
-    const currentState = getEmergencyState(schoolId);
-    setEmergencyState(currentState);
-
-    // Listen for changes from other tabs/windows
-    const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === getEmergencyKey(schoolId)) {
-        const updatedState = getEmergencyState(schoolId);
-        setEmergencyState(updatedState);
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, [schoolId]);
+  const { data: emergencyState } = useDoc<EmergencyState>(emergencyRef);
 
   const handleClose = () => {
-    if(emergencyState) {
-        // Update local state for immediate UI change
-        setEmergencyState({ ...emergencyState, active: false });
-        // Update localStorage and notify other tabs
-        setGlobalEmergencyState(schoolId, { ...emergencyState, active: false });
-        addHistoryLog(schoolId, {
-            action: "საგანგებო რეჟიმის გამორთვა",
-            details: "რეჟიმი გამოირთო დაფიდან.",
-        });
+    if (emergencyState && firestore) {
+        setEmergencyState(firestore, schoolId, { active: false, message: emergencyState.message });
     }
   }
 
-  if (!isClient || !emergencyState?.active) {
+  if (!emergencyState?.active) {
     return null;
   }
   

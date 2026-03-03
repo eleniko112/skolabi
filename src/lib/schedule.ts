@@ -1,47 +1,25 @@
 import { SchedulePeriod } from "./types";
+import { doc, collection, Firestore } from 'firebase/firestore';
+import { setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
-export const SCHEDULE_KEY_PREFIX = 'school-board-schedule-';
+export const getLessonsCollection = (db: Firestore, schoolId: string) => 
+  collection(db, 'schools', schoolId, 'lessons');
 
-export const defaultSchedule: SchedulePeriod[] = [
-    { startTime: '09:00', endTime: '09:45', label: '1-ლი გაკვეთილი' },
-    { startTime: '09:45', endTime: '10:00', label: 'დასვენება' },
-    { startTime: '10:00', endTime: '10:45', label: 'მე-2 გაკვეთილი' },
-    { startTime: '10:45', endTime: '11:00', label: 'დასვენება' },
-    { startTime: '11:00', endTime: '11:45', label: 'მე-3 გაკვეთილი' },
-    { startTime: '11:45', endTime: '12:00', label: 'დასვენება' },
-    { startTime: '12:00', endTime: '12:45', label: 'მე-4 გაკვეთილი' },
-    { startTime: '12:45', endTime: '13:30', label: 'დიდი დასვენება' },
-    { startTime: '13:30', endTime: '14:15', label: 'მე-5 გაკვეთილი' },
-    { startTime: '14:15', endTime: '14:30', label: 'დასვენება' },
-    { startTime: '14:30', endTime: '15:15', label: 'მე-6 გაკვეთილი' },
-    { startTime: '15:15', endTime: '15:30', label: 'დასვენება' },
-    { startTime: '15:30', endTime: '16:15', label: 'მე-7 გაკვეთილი' },
-    { startTime: '16:15', endTime: '16:15', label: 'გაკვეთილები დასრულდა' },
-];
+export const getLessonDoc = (db: Firestore, schoolId: string, lessonId: string) => 
+  doc(db, 'schools', schoolId, 'lessons', lessonId);
 
-const getStorage = () => {
-    if (typeof window === 'undefined') return undefined;
-    return window.localStorage;
-}
-
-export const getSchedule = (schoolId: string): SchedulePeriod[] => {
-    const storage = getStorage();
-    if (!storage) return defaultSchedule;
-
-    const key = `${SCHEDULE_KEY_PREFIX}${schoolId}`;
-    let schedule = JSON.parse(storage.getItem(key) || 'null') as SchedulePeriod[] | null;
-
-    if (!schedule || schedule.length === 0) {
-        storage.setItem(key, JSON.stringify(defaultSchedule));
-        return defaultSchedule;
-    }
-
-    return schedule;
+export const setSchedule = (db: Firestore, schoolId: string, schedule: SchedulePeriod[]) => {
+    schedule.forEach((period, index) => {
+        const docRef = getLessonDoc(db, schoolId, period.id || `period-${index}`);
+        setDocumentNonBlocking(docRef, {
+            ...period,
+            schoolId,
+            lessonNumber: index + 1,
+        }, { merge: true });
+    });
 };
 
-export const setSchedule = (schoolId: string, schedule: SchedulePeriod[]) => {
-    const storage = getStorage();
-    if (!storage) return;
-
-    storage.setItem(`${SCHEDULE_KEY_PREFIX}${schoolId}`, JSON.stringify(schedule));
+export const deleteLesson = (db: Firestore, schoolId: string, lessonId: string) => {
+    const docRef = getLessonDoc(db, schoolId, lessonId);
+    deleteDocumentNonBlocking(docRef);
 };
