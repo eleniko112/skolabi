@@ -42,9 +42,11 @@ import {
   Palette,
   Layout,
   Edit,
-  X
+  X,
+  ChevronUp,
+  ChevronDown
 } from 'lucide-react';
-import { getSchools, addSchool, deleteSchool, updateSchool } from '@/lib/schools';
+import { getSchools, addSchool, deleteSchool, updateSchool, reorderSchools } from '@/lib/schools';
 import { addAnnouncement } from '@/lib/announcements';
 import { setEmergencyState } from '@/lib/emergency';
 import { setSchedule, defaultSchedule } from '@/lib/schedule';
@@ -222,6 +224,15 @@ export function SuperAdminDashboard() {
     toast({ title: 'სკოლა წაიშალა' });
   };
 
+  const onMoveSchool = (schoolId: string, direction: 'up' | 'down') => {
+    reorderSchools(schoolId, direction);
+    setSchools(getSchools());
+    toast({ 
+      title: direction === 'up' ? 'გადაადგილდა ზემოთ' : 'გადაადგილდა ქვემოთ',
+      duration: 1500 
+    });
+  };
+
   const onGlobalAnnouncement = (values: z.infer<typeof globalAnnouncementSchema>) => {
     const today = new Date().toISOString().split('T')[0];
     const farFuture = '2099-12-31';
@@ -349,7 +360,7 @@ export function SuperAdminDashboard() {
             <Card className="lg:col-span-2">
               <CardHeader>
                 <CardTitle>სკოლების სია</CardTitle>
-                <CardDescription>სისტემაში რეგისტრირებული ყველა სკოლა.</CardDescription>
+                <CardDescription>სისტემაში რეგისტრირებული ყველა სკოლა. გამოიყენეთ ისრები პოზიციის შესაცვლელად.</CardDescription>
               </CardHeader>
               <CardContent>
                 <Table>
@@ -363,19 +374,40 @@ export function SuperAdminDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {schools.map(school => (
+                    {schools.map((school, index) => (
                       <TableRow key={school.id}>
                         <TableCell className="font-bold">{school.name}</TableCell>
                         <TableCell>{school.id}</TableCell>
                         <TableCell className="font-mono">{school.password}</TableCell>
                         <TableCell className="font-mono">{school.adminPin}</TableCell>
-                        <TableCell className="text-right flex gap-2 justify-end">
-                          <Button variant="ghost" size="icon" onClick={() => onEditClick(school)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => onDeleteSchool(school.id)}>
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
+                        <TableCell className="text-right">
+                          <div className="flex gap-1 justify-end items-center">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8"
+                              disabled={index === 0} 
+                              onClick={() => onMoveSchool(school.id, 'up')}
+                            >
+                              <ChevronUp className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8"
+                              disabled={index === schools.length - 1} 
+                              onClick={() => onMoveSchool(school.id, 'down')}
+                            >
+                              <ChevronDown className="h-4 w-4" />
+                            </Button>
+                            <Separator orientation="vertical" className="h-6 mx-1" />
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEditClick(school)}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onDeleteSchool(school.id)}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}

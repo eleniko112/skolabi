@@ -14,7 +14,7 @@ const defaultSchools: School[] = [
     password: '1111', 
     adminPin: '1234',
     logoUrl: PlaceHolderImages.find(i => i.id === 'school-logo-1')?.imageUrl || '',
-    cardColor: "221 39% 49%", // Blue
+    cardColor: "347 77% 60%", // Cherry Red
   },
   { 
     id: '7-sajaro-skola',
@@ -105,3 +105,20 @@ export const deleteSchool = (schoolId: string) => {
     schools = schools.filter(s => s.id !== schoolId);
     storage.setItem(SCHOOLS_KEY, JSON.stringify(schools));
 }
+
+export const reorderSchools = (schoolId: string, direction: 'up' | 'down') => {
+    const storage = getStorage();
+    if (!storage) return;
+
+    let schools = getSchools();
+    const index = schools.findIndex(s => s.id === schoolId);
+    if (index === -1) return;
+
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= schools.length) return;
+
+    const newSchools = [...schools];
+    [newSchools[index], newSchools[targetIndex]] = [newSchools[targetIndex], newSchools[index]];
+    
+    storage.setItem(SCHOOLS_KEY, JSON.stringify(newSchools));
+};
