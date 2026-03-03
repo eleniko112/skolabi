@@ -161,7 +161,7 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
         <Separator className="mt-0" />
 
         <div className="space-y-1 flex-1 pb-1.5 mt-0.5">
-          <div className="grid gap-1.5">
+          <div className="grid gap-1">
             {schedule?.map((item, index) => {
                 const start = timeToSeconds(item.startTime);
                 const end = timeToSeconds(item.endTime);
@@ -172,22 +172,22 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
                     <div 
                         key={item.id || index} 
                         className={cn(
-                            "flex items-center justify-between p-2.5 md:p-4 rounded-xl border transition-all duration-300",
-                            isCurrent ? "bg-primary text-primary-foreground shadow-lg scale-[1.02] border-primary z-10" : 
+                            "flex items-center justify-between p-2 md:p-3 rounded-xl border transition-all duration-300",
+                            isCurrent ? "bg-primary text-primary-foreground shadow-lg scale-[1.01] border-primary z-10" : 
                             isPast ? "bg-muted/40 opacity-50 grayscale border-transparent" : "bg-card hover:border-primary/30"
                         )}
                     >
-                        <div className="flex items-center gap-3 md:gap-4">
+                        <div className="flex items-center gap-2 md:gap-3">
                             <span className={cn(
-                                "h-6 w-6 md:h-9 md:w-9 flex items-center justify-center rounded-full text-xs md:text-sm font-bold",
+                                "h-6 w-6 md:h-8 md:w-8 flex items-center justify-center rounded-full text-[10px] md:text-xs font-bold",
                                 isCurrent ? "bg-white text-primary" : "bg-muted text-muted-foreground"
                             )}>
                                 {index + 1}
                             </span>
-                            <span className="font-bold text-sm md:text-lg">{item.label}</span>
+                            <span className="font-bold text-sm md:text-base">{item.label}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                            <Badge variant={isCurrent ? "secondary" : "outline"} className="tabular-nums text-xs md:text-sm py-1 px-2 md:px-3 h-7 md:h-8">
+                            <Badge variant={isCurrent ? "secondary" : "outline"} className="tabular-nums text-[10px] md:text-xs py-0.5 px-2 md:px-2.5 h-6 md:h-7">
                                 {item.startTime} - {item.endTime}
                             </Badge>
                         </div>
