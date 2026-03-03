@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -5,6 +6,7 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   Dialog,
   DialogContent,
@@ -48,6 +50,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const SUPER_PIN = '9999';
 
@@ -88,6 +91,8 @@ export function SuperAdminDashboard() {
   const [schools, setSchools] = useState<School[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+
+  const adminLogo = PlaceHolderImages.find(img => img.id === 'super-admin-logo')?.imageUrl;
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -242,15 +247,27 @@ export function SuperAdminDashboard() {
   return (
     <div className="max-w-6xl mx-auto space-y-8">
       <div className="flex justify-between items-center">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-primary rounded-xl shadow-lg">
-            <ShieldAlert className="h-8 w-8 text-primary-foreground" />
+        <div className="flex items-center gap-6">
+          <div className="relative h-20 w-20 overflow-hidden rounded-2xl shadow-xl border-4 border-primary/20">
+            {adminLogo ? (
+              <Image 
+                src={adminLogo} 
+                alt="Super Admin Logo" 
+                fill 
+                className="object-cover"
+                data-ai-hint="cyber security"
+              />
+            ) : (
+              <div className="h-full w-full bg-primary flex items-center justify-center">
+                <ShieldAlert className="h-10 w-10 text-primary-foreground" />
+              </div>
+            )}
           </div>
           <div>
-            <h1 className="text-4xl font-bold font-headline text-primary">
+            <h1 className="text-4xl font-bold font-headline text-primary tracking-tight">
               სუპერ ადმინისტრატორის პანელი
             </h1>
-            <p className="text-muted-foreground mt-1">მართეთ ყველა სკოლა და განახორციელეთ გლობალური ქმედებები.</p>
+            <p className="text-muted-foreground mt-1 text-lg">მართეთ ყველა სკოლა და განახორციელეთ გლობალური ქმედებები.</p>
           </div>
         </div>
         <Button asChild variant="outline">
