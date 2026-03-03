@@ -10,7 +10,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['"BPG Nino Mtavruli Bold"', 'sans-serif'],
+        body: ['"BPG Arial"', 'sans-serif'],
         headline: ['"BPG Nino Mtavruli Bold"', 'sans-serif'],
         code: ['monospace'],
       },
