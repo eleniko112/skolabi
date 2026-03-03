@@ -97,72 +97,72 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
   if (isLoading) {
     return (
         <Card className="shadow-lg rounded-xl flex flex-col h-full">
-            <CardHeader className="p-2 md:p-3"><CardTitle className="text-lg font-headline"><Clock className="inline mr-2" />განრიგი</CardTitle></CardHeader>
-            <CardContent className="flex items-center justify-center flex-grow p-2"><Loader2 className="h-6 w-6 animate-spin text-primary" /></CardContent>
+            <CardHeader className="p-4"><CardTitle className="text-xl font-headline"><Clock className="inline mr-2" />განრიგი</CardTitle></CardHeader>
+            <CardContent className="flex items-center justify-center flex-grow p-6"><Loader2 className="h-8 w-8 animate-spin text-primary" /></CardContent>
         </Card>
     );
   }
 
   return (
-    <Card className="shadow-lg rounded-xl flex flex-col h-full overflow-hidden border">
-      <CardHeader className="bg-muted/30 p-2 md:p-3">
+    <Card className="shadow-xl rounded-xl flex flex-col h-full overflow-hidden border">
+      <CardHeader className="bg-muted/30 p-4 md:p-5">
         <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-1.5 text-primary font-headline text-lg md:text-xl">
-            <Clock className="h-5 w-5 md:h-6 md:w-6" />
+            <CardTitle className="flex items-center gap-2 text-primary font-headline text-xl md:text-2xl">
+            <Clock className="h-6 w-6 md:h-7 md:w-7" />
             ზარების განრიგი
             </CardTitle>
-            <div className="text-base md:text-lg font-bold font-mono text-muted-foreground tabular-nums">
+            <div className="text-xl md:text-2xl font-bold font-mono text-muted-foreground tabular-nums">
                 {now.toLocaleTimeString('ka-GE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
             </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-2 flex-grow flex flex-col pt-2 px-2 md:px-3 overflow-y-auto">
+      <CardContent className="space-y-4 flex-grow flex flex-col pt-4 px-4 md:px-6 overflow-y-auto">
         {status && status.type !== 'ended' ? (
             <div className={cn(
-                "text-center p-2 md:p-3 rounded-lg border shadow-inner transition-colors",
+                "text-center p-4 md:p-6 rounded-xl border shadow-inner transition-colors",
                 status.type === 'lesson' ? "bg-primary/5 border-primary/10" : "bg-accent/5 border-accent/10"
             )}>
-                <div className="flex items-center justify-center gap-1.5 mb-0.5">
-                    {status.type === 'lesson' ? <Bell className="h-3.5 w-3.5 text-primary animate-ring" /> : <Hourglass className="h-3.5 w-3.5 text-accent animate-spin-slow" />}
-                    <p className={cn("text-xs font-bold font-headline", status.type === 'lesson' ? "text-primary" : "text-accent")}>
+                <div className="flex items-center justify-center gap-2 mb-2">
+                    {status.type === 'lesson' ? <Bell className="h-5 w-5 text-primary animate-ring" /> : <Hourglass className="h-5 w-5 text-accent animate-spin-slow" />}
+                    <p className={cn("text-sm font-bold font-headline", status.type === 'lesson' ? "text-primary" : "text-accent")}>
                         {status.label}
                     </p>
                 </div>
                 
                 <div className="flex flex-col items-center">
-                    <p className="text-4xl md:text-5xl font-black text-foreground tracking-tighter tabular-nums leading-none mb-0.5">
+                    <p className="text-5xl md:text-6xl font-black text-foreground tracking-tighter tabular-nums leading-none mb-2">
                         {formatTime(status.remaining!)}
                     </p>
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 mb-2 bg-background h-5">
+                    <Badge variant="outline" className="text-xs px-2 py-0.5 mb-4 bg-background">
                         მიზანი: {status.targetTime}
                     </Badge>
                 </div>
 
-                <div className="space-y-0.5">
-                    <Progress value={status.progress} className={cn("h-1.5 shadow-sm", status.type === 'lesson' ? "bg-primary/20" : "bg-accent/20")} />
-                    <div className="flex justify-between text-[10px] font-medium text-muted-foreground">
+                <div className="space-y-2">
+                    <Progress value={status.progress} className={cn("h-2.5 shadow-sm", status.type === 'lesson' ? "bg-primary/20" : "bg-accent/20")} />
+                    <div className="flex justify-between text-xs font-medium text-muted-foreground">
                         <span>{status.periodLabel}</span>
                         <span>{Math.round(status.progress!)}%</span>
                     </div>
                 </div>
             </div>
         ) : status?.type === 'ended' ? (
-            <div className="text-center p-2 bg-muted/20 rounded-lg border border-dashed border-muted-foreground/30">
-                <Clock className="h-4 w-4 mx-auto mb-0.5 text-muted-foreground opacity-50" />
-                <h3 className="text-[11px] font-bold font-headline text-muted-foreground">{status.label}</h3>
-                <p className="text-[9px] text-muted-foreground">ხვალამდე!</p>
+            <div className="text-center p-6 bg-muted/20 rounded-xl border-2 border-dashed border-muted-foreground/30">
+                <Clock className="h-6 w-6 mx-auto mb-2 text-muted-foreground opacity-50" />
+                <h3 className="text-lg font-bold font-headline text-muted-foreground">{status.label}</h3>
+                <p className="text-sm text-muted-foreground">ხვალამდე!</p>
             </div>
         ) : (
-            <div className="text-center p-2 bg-muted/20 rounded-lg border border-dashed border-muted-foreground/30">
-                <p className="text-muted-foreground text-[10px] font-headline">განრიგი არ არის დამატებული</p>
+            <div className="text-center p-6 bg-muted/20 rounded-xl border-2 border-dashed border-muted-foreground/30">
+                <p className="text-muted-foreground text-sm font-headline">განრიგი არ არის დამატებული</p>
             </div>
         )}
 
-        <Separator className="my-1" />
+        <Separator className="my-2" />
 
-        <div className="space-y-1.5 flex-1 pb-2">
-          <h4 className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider px-1">დღევანდელი პერიოდები</h4>
-          <div className="grid gap-1">
+        <div className="space-y-3 flex-1 pb-4">
+          <h4 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest px-1">დღევანდელი პერიოდები</h4>
+          <div className="grid gap-2">
             {schedule?.map((item, index) => {
                 const start = timeToSeconds(item.startTime);
                 const end = timeToSeconds(item.endTime);
@@ -173,22 +173,22 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
                     <div 
                         key={item.id || index} 
                         className={cn(
-                            "flex items-center justify-between p-1.5 md:p-2 rounded-md border transition-all duration-200",
-                            isCurrent ? "bg-primary text-primary-foreground shadow-sm scale-[1.01] border-primary" : 
+                            "flex items-center justify-between p-3 md:p-4 rounded-xl border transition-all duration-300",
+                            isCurrent ? "bg-primary text-primary-foreground shadow-lg scale-[1.02] border-primary z-10" : 
                             isPast ? "bg-muted/40 opacity-50 grayscale border-transparent" : "bg-card hover:border-primary/30"
                         )}
                     >
-                        <div className="flex items-center gap-1.5 md:gap-2">
+                        <div className="flex items-center gap-3 md:gap-4">
                             <span className={cn(
-                                "h-5 w-5 md:h-6 md:w-6 flex items-center justify-center rounded-full text-[9px] md:text-[10px] font-bold",
+                                "h-7 w-7 md:h-8 md:w-8 flex items-center justify-center rounded-full text-xs md:text-sm font-bold",
                                 isCurrent ? "bg-white text-primary" : "bg-muted text-muted-foreground"
                             )}>
                                 {index + 1}
                             </span>
-                            <span className="font-bold text-xs md:text-sm">{item.label}</span>
+                            <span className="font-bold text-sm md:text-base">{item.label}</span>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                            <Badge variant={isCurrent ? "secondary" : "outline"} className="tabular-nums text-[9px] md:text-[10px] py-0 px-1.5 h-5">
+                        <div className="flex items-center gap-2">
+                            <Badge variant={isCurrent ? "secondary" : "outline"} className="tabular-nums text-xs md:text-sm py-0.5 px-2">
                                 {item.startTime} - {item.endTime}
                             </Badge>
                         </div>
