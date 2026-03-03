@@ -30,10 +30,10 @@ export default function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-8 relative">
       <div className="absolute top-8 right-8">
-        <Button asChild variant="ghost" size="sm" className="text-muted-foreground hover:text-primary">
+        <Button asChild variant="ghost" size="icon" className="text-muted-foreground hover:text-primary" title="სუპერ ადმინი">
           <Link href="/super-admin">
-            <ShieldAlert className="mr-2 h-4 w-4" />
-            სუპერ ადმინი
+            <ShieldAlert className="h-6 w-6" />
+            <span className="sr-only">სუპერ ადმინი</span>
           </Link>
         </Button>
       </div>
