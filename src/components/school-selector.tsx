@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -5,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Building, KeyRound, Loader2 } from 'lucide-react';
+import { Building, KeyRound, Loader2, ArrowRight } from 'lucide-react';
 import type { School } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -26,6 +27,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 interface SchoolSelectorProps {
   schools: School[];
@@ -79,18 +81,29 @@ export function SchoolSelector({ schools }: SchoolSelectorProps) {
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 px-4">
         {schools.map((school) => (
           <Card
             key={school.id}
-            className="w-80 cursor-pointer transition-all duration-300 transform hover:scale-105 hover:shadow-2xl shadow-lg border-2 border-transparent hover:border-primary"
+            className={cn(
+                "group relative cursor-pointer transition-all duration-500 overflow-hidden",
+                "bg-card hover:bg-white hover:shadow-2xl hover:-translate-y-2 border-2 border-transparent hover:border-primary/20"
+            )}
             onClick={() => handleSchoolSelect(school)}
           >
-            <CardHeader className="items-center text-center p-8">
-              <div className="p-5 bg-primary/10 rounded-full mb-4">
-                <Building className="w-12 h-12 text-primary" />
+            {/* Background highlight pattern */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150 duration-700" />
+            
+            <CardHeader className="items-center text-center p-10 relative z-10">
+              <div className="p-6 bg-primary/10 rounded-2xl mb-6 transition-all duration-500 group-hover:bg-primary group-hover:text-primary-foreground">
+                <Building className="w-14 h-14" />
               </div>
-              <CardTitle className="font-headline text-2xl">{school.name}</CardTitle>
+              <CardTitle className="font-headline text-2xl mb-2 group-hover:text-primary transition-colors">
+                {school.name}
+              </CardTitle>
+              <div className="flex items-center gap-2 text-muted-foreground text-sm font-medium opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
+                შესვლა <ArrowRight className="w-4 h-4" />
+              </div>
             </CardHeader>
             <CardContent></CardContent>
           </Card>
@@ -100,26 +113,26 @@ export function SchoolSelector({ schools }: SchoolSelectorProps) {
       <Dialog open={!!selectedSchool} onOpenChange={() => setSelectedSchool(null)}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle className="font-headline">{selectedSchool?.name}</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="font-headline text-2xl text-primary">{selectedSchool?.name}</DialogTitle>
+            <DialogDescription className="text-lg">
               გთხოვთ შეიყვანოთ სკოლის პაროლი დაფის სანახავად.
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-6">
               <FormField
                 control={form.control}
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>პაროლი</FormLabel>
+                    <FormLabel className="text-base">პაროლი</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                         <Input
                           type="password"
                           placeholder="••••••••"
-                          className="pl-10"
+                          className="pl-12 h-12 text-lg tracking-widest"
                           {...field}
                         />
                       </div>
@@ -128,8 +141,8 @@ export function SchoolSelector({ schools }: SchoolSelectorProps) {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <Button type="submit" className="w-full h-12 text-lg font-bold shadow-lg shadow-primary/20" disabled={isLoading}>
+                {isLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
                 შესვლა
               </Button>
             </form>
