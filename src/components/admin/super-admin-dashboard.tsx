@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
@@ -39,7 +39,8 @@ import {
   CloudLightning,
   PlusCircle,
   AlertTriangle,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Clock
 } from 'lucide-react';
 import { useCollection, useMemoFirebase, useFirestore } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
@@ -77,6 +78,14 @@ const bulkAnnouncementSchema = z.object({
   title: z.string().min(3, "სათაური აუცილებელია"),
   content: z.string().min(10, "შინაარსი აუცილებელია"),
   imageUrl: z.string().url("გთხოვთ მიუთითოთ ვალიდური სურათის მისამართი.").or(z.literal('')),
+});
+
+const bulkScheduleSchema = z.object({
+  periods: z.array(z.object({
+    startTime: z.string().regex(/^\d{2}:\d{2}$/, "დრო უნდა იყოს HH:MM ფორმატში"),
+    endTime: z.string().regex(/^\d{2}:\d{2}$/, "დრო უნდა იყოს HH:MM ფორმატში"),
+    label: z.string().min(1, "სავალდებულო ველი"),
+  })),
 });
 
 export function SuperAdminDashboard() {
@@ -121,6 +130,22 @@ export function SuperAdminDashboard() {
       content: '',
       imageUrl: 'https://picsum.photos/seed/bulk/1200/800'
     },
+  });
+
+  const bulkScheduleForm = useForm<z.infer<typeof bulkScheduleSchema>>({
+    resolver: zodResolver(bulkScheduleSchema),
+    defaultValues: {
+      periods: [
+        { startTime: '09:00', endTime: '09:45', label: '1-ლი გაკვეთილი' },
+        { startTime: '09:55', endTime: '10:40', label: '2-რე გაკვეთილი' },
+        { startTime: '10:50', endTime: '11:35', label: '3-მე გაკვეთილი' },
+      ],
+    },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control: bulkScheduleForm.control,
+    name: "periods",
   });
 
   const onPinSubmit = (values: z.infer<typeof pinSchema>) => {
@@ -188,6 +213,27 @@ export function SuperAdminDashboard() {
       title: active ? "საგანგებო რეჟიმი ჩაირთო ყველასთვის" : "საგანგებო რეჟიმი გამოირთო ყველასთვის",
       variant: active ? "destructive" : "default"
     });
+    setIsBulkProcessing(false);
+  };
+
+  const handleBulkSchedule = (values: z.infer<typeof bulkScheduleSchema>) => {
+    if (!firestore || !schools) return;
+    setIsBulkProcessing(true);
+
+    const scheduleData: SchedulePeriod[] = values.periods.map((p, i) => ({
+      id: `bulk-${i}`,
+      schoolId: '',
+      startTime: p.startTime,
+      endTime: p.endTime,
+      label: p.label,
+      lessonNumber: i + 1,
+    }));
+
+    schools.forEach(school => {
+      setSchedule(firestore, school.id, scheduleData);
+    });
+
+    toast({ title: "ზარების განრიგი განახლდა ყველა სკოლაში", description: `${schools.length} სკოლა განახლდა.` });
     setIsBulkProcessing(false);
   };
 
@@ -388,7 +434,7 @@ export function SuperAdminDashboard() {
 
         <TabsContent value="bulk">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <Card className="border-primary/20 shadow-md">
+            <Card className="border-primary/20 shadow-md h-fit">
               <CardHeader className="bg-primary/5">
                 <CardTitle className="flex items-center gap-2 text-primary font-headline">
                   <Megaphone className="h-6 w-6" /> ჯგუფური განცხადება
@@ -419,7 +465,7 @@ export function SuperAdminDashboard() {
               </CardContent>
             </Card>
 
-            <Card className="border-destructive/20 shadow-md">
+            <Card className="border-destructive/20 shadow-md h-fit">
               <CardHeader className="bg-destructive/5">
                 <CardTitle className="flex items-center gap-2 text-destructive font-headline">
                   <CloudLightning className="h-6 w-6" /> საგანგებო რეჟიმი ყველასთვის
@@ -445,29 +491,78 @@ export function SuperAdminDashboard() {
             <Card className="md:col-span-2 border-accent/20 shadow-md">
               <CardHeader className="bg-accent/5">
                 <CardTitle className="flex items-center gap-2 text-accent font-headline">
-                  <Calendar className="h-6 w-6" /> სტანდარტული განრიგის დაწესება
+                  <Clock className="h-6 w-6" /> ერთიანი ზარების განრიგი
                 </CardTitle>
-                <CardDescription>დააყენეთ ერთიანი ზარების განრიგი ყველა სკოლისთვის.</CardDescription>
+                <CardDescription>დააყენეთ სტანდარტული განრიგი ყველა სკოლისთვის ერთდროულად.</CardDescription>
               </CardHeader>
               <CardContent className="pt-6">
-                <div className="flex items-center justify-between p-4 bg-muted rounded-lg border mb-6">
-                  <p className="text-sm text-muted-foreground italic">სტანდარტული განრიგი: 6 გაკვეთილი (09:00 - 14:15)</p>
-                  <Button variant="accent" onClick={() => {
-                    if (!firestore || !schools) return;
-                    const defaultSchedule: SchedulePeriod[] = [
-                      { id: 'p1', schoolId: '', startTime: '09:00', endTime: '09:45', label: '1-ლი გაკვეთილი', lessonNumber: 1 },
-                      { id: 'p2', schoolId: '', startTime: '09:55', endTime: '10:40', label: '2-რე გაკვეთილი', lessonNumber: 2 },
-                      { id: 'p3', schoolId: '', startTime: '10:50', endTime: '11:35', label: '3-მე გაკვეთილი', lessonNumber: 3 },
-                      { id: 'p4', schoolId: '', startTime: '11:55', endTime: '12:40', label: '4-თე გაკვეთილი', lessonNumber: 4 },
-                      { id: 'p5', schoolId: '', startTime: '12:50', endTime: '13:35', label: '5-თე გაკვეთილი', lessonNumber: 5 },
-                      { id: 'p6', schoolId: '', startTime: '13:45', endTime: '14:30', label: '6-თე გაკვეთილი', lessonNumber: 6 },
-                    ];
-                    schools.forEach(s => setSchedule(firestore, s.id, defaultSchedule));
-                    toast({ title: "განრიგი განახლდა ყველა სკოლაში" });
-                  }} disabled={isBulkProcessing}>
-                    <Zap className="mr-2 h-4 w-4" /> სტანდარტულის დაყენება ყველასთან
-                  </Button>
-                </div>
+                <Form {...bulkScheduleForm}>
+                  <form onSubmit={bulkScheduleForm.handleSubmit(handleBulkSchedule)} className="space-y-6">
+                    <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+                      {fields.map((field, index) => (
+                        <div key={field.id} className="flex items-end gap-3 p-4 border rounded-xl bg-muted/30">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-grow">
+                            <FormField
+                              control={bulkScheduleForm.control}
+                              name={`periods.${index}.startTime`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>დაწყება</FormLabel>
+                                  <FormControl><Input type="time" {...field} /></FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={bulkScheduleForm.control}
+                              name={`periods.${index}.endTime`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>დასრულება</FormLabel>
+                                  <FormControl><Input type="time" {...field} /></FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={bulkScheduleForm.control}
+                              name={`periods.${index}.label`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>აღწერა</FormLabel>
+                                  <FormControl><Input placeholder="მაგ: 1-ლი გაკვეთილი" {...field} /></FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            onClick={() => remove(index)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex justify-between items-center border-t pt-6">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => append({ startTime: '09:00', endTime: '09:45', label: 'ახალი პერიოდი' })}
+                      >
+                        <PlusCircle className="mr-2 h-4 w-4" /> პერიოდის დამატება
+                      </Button>
+                      <Button type="submit" variant="accent" className="px-8" disabled={isBulkProcessing || !schools}>
+                        {isBulkProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        <Zap className="mr-2 h-4 w-4" /> განრიგის დაყენება ყველასთან
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
               </CardContent>
             </Card>
           </div>
