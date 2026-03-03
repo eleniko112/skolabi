@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import Link from 'next/link';
+import Link from 'next/navigation';
 import Image from 'next/image';
 import {
   Dialog,
@@ -40,13 +40,15 @@ import {
   Save,
   RefreshCcw,
   Palette,
-  Layout
+  Layout,
+  Edit,
+  X
 } from 'lucide-react';
-import { getSchools, addSchool, deleteSchool } from '@/lib/schools';
+import { getSchools, addSchool, deleteSchool, updateSchool } from '@/lib/schools';
 import { addAnnouncement } from '@/lib/announcements';
 import { setEmergencyState } from '@/lib/emergency';
 import { setSchedule, defaultSchedule } from '@/lib/schedule';
-import { setTheme, defaultTheme, hslToHex, hexToHsl } from '@/lib/theme';
+import { setTheme, defaultTheme, hslToHex, hexToHsl, getTheme } from '@/lib/theme';
 import { School } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -96,6 +98,7 @@ export function SuperAdminDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [schools, setSchools] = useState<School[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [editingSchoolId, setEditingSchoolId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const adminLogo = PlaceHolderImages.find(img => img.id === 'super-admin-logo')?.imageUrl;
@@ -161,25 +164,56 @@ export function SuperAdminDashboard() {
     }
   };
 
-  const onAddSchool = (values: z.infer<typeof schoolSchema>) => {
-    addSchool({
+  const onSubmitSchool = (values: z.infer<typeof schoolSchema>) => {
+    const schoolData: School = {
       id: values.id,
       name: values.name,
       password: values.password,
       adminPin: values.adminPin,
       cardColor: values.cardColor
-    });
-    
-    // Set board theme for the new school
-    setTheme(values.id, {
-      background: values.background,
-      primary: values.primary,
-      accent: values.accent,
-    });
+    };
+
+    if (editingSchoolId) {
+      updateSchool(schoolData);
+      setTheme(values.id, {
+        background: values.background,
+        primary: values.primary,
+        accent: values.accent,
+      });
+      toast({ title: 'სკოლა განახლდა', description: `${values.name} წარმატებით განახლდა.` });
+      setEditingSchoolId(null);
+    } else {
+      addSchool(schoolData);
+      setTheme(values.id, {
+        background: values.background,
+        primary: values.primary,
+        accent: values.accent,
+      });
+      toast({ title: 'სკოლა დაემატა', description: `${values.name} წარმატებით დაემატა სიაში.` });
+    }
 
     setSchools(getSchools());
     schoolForm.reset();
-    toast({ title: 'სკოლა დაემატა', description: `${values.name} წარმატებით დაემატა სიაში.` });
+  };
+
+  const onEditClick = (school: School) => {
+    const theme = getTheme(school.id);
+    setEditingSchoolId(school.id);
+    schoolForm.reset({
+      id: school.id,
+      name: school.name,
+      password: school.password || '',
+      adminPin: school.adminPin || '',
+      cardColor: school.cardColor || '221 39% 49%',
+      background: theme.background,
+      primary: theme.primary,
+      accent: theme.accent,
+    });
+  };
+
+  const cancelEdit = () => {
+    setEditingSchoolId(null);
+    schoolForm.reset();
   };
 
   const onDeleteSchool = (schoolId: string) => {
@@ -335,7 +369,10 @@ export function SuperAdminDashboard() {
                         <TableCell>{school.id}</TableCell>
                         <TableCell className="font-mono">{school.password}</TableCell>
                         <TableCell className="font-mono">{school.adminPin}</TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right flex gap-2 justify-end">
+                          <Button variant="ghost" size="icon" onClick={() => onEditClick(school)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
                           <Button variant="ghost" size="icon" onClick={() => onDeleteSchool(school.id)}>
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
@@ -349,12 +386,14 @@ export function SuperAdminDashboard() {
 
             <Card>
               <CardHeader>
-                <CardTitle>სკოლის დამატება</CardTitle>
-                <CardDescription>ახალი სკოლის რეგისტრაცია და თემის მორგება.</CardDescription>
+                <CardTitle>{editingSchoolId ? 'სკოლის რედაქტირება' : 'სკოლის დამატება'}</CardTitle>
+                <CardDescription>
+                  {editingSchoolId ? 'შეცვალეთ არსებული სკოლის პარამეტრები.' : 'ახალი სკოლის რეგისტრაცია და თემის მორგება.'}
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <Form {...schoolForm}>
-                  <form onSubmit={schoolForm.handleSubmit(onAddSchool)} className="space-y-6">
+                  <form onSubmit={schoolForm.handleSubmit(onSubmitSchool)} className="space-y-6">
                     <div className="space-y-4">
                       <FormField
                         control={schoolForm.control}
@@ -373,7 +412,14 @@ export function SuperAdminDashboard() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>უნიკალური ID</FormLabel>
-                            <FormControl><Input placeholder="mag-5-sajaro-skola" {...field} /></FormControl>
+                            <FormControl>
+                              <Input 
+                                placeholder="mag-5-sajaro-skola" 
+                                {...field} 
+                                disabled={!!editingSchoolId} 
+                                className={editingSchoolId ? 'bg-muted' : ''}
+                              />
+                            </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -491,9 +537,17 @@ export function SuperAdminDashboard() {
                       />
                     </div>
 
-                    <Button type="submit" className="w-full">
-                      <PlusCircle className="mr-2 h-4 w-4" /> სკოლის დამატება
-                    </Button>
+                    <div className="flex gap-2">
+                      {editingSchoolId && (
+                        <Button type="button" variant="outline" className="flex-1" onClick={cancelEdit}>
+                          <X className="mr-2 h-4 w-4" /> გაუქმება
+                        </Button>
+                      )}
+                      <Button type="submit" className="flex-1">
+                        {editingSchoolId ? <Save className="mr-2 h-4 w-4" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+                        {editingSchoolId ? 'განახლება' : 'დამატება'}
+                      </Button>
+                    </div>
                   </form>
                 </Form>
               </CardContent>
