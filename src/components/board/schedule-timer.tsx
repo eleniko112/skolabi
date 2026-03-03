@@ -147,10 +147,10 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
                 </div>
             </div>
         ) : status?.type === 'ended' ? (
-            <div className="text-center p-1 bg-muted/20 rounded-lg border-2 border-dashed border-muted-foreground/30">
-                <Clock className="h-3 w-3 mx-auto mb-0.5 text-muted-foreground opacity-50" />
-                <h3 className="text-[10px] font-bold font-headline text-muted-foreground leading-tight">{status.label}</h3>
-                <p className="text-[8px] text-muted-foreground">ხვალამდე!</p>
+            <div className="text-center p-2 bg-muted/20 rounded-lg border-2 border-dashed border-muted-foreground/30">
+                <Clock className="h-4 w-4 mx-auto mb-1 text-muted-foreground opacity-50" />
+                <h3 className="text-xs font-bold font-headline text-muted-foreground leading-tight">{status.label}</h3>
+                <p className="text-[10px] text-muted-foreground">ხვალამდე!</p>
             </div>
         ) : (
             <div className="text-center p-2 bg-muted/20 rounded-lg border-2 border-dashed border-muted-foreground/30">
@@ -172,22 +172,22 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
                     <div 
                         key={item.id || index} 
                         className={cn(
-                            "flex items-center justify-between p-2 md:p-3 rounded-xl border transition-all duration-300",
+                            "flex items-center justify-between p-1.5 md:p-2 rounded-lg border transition-all duration-300",
                             isCurrent ? "bg-primary text-primary-foreground shadow-lg scale-[1.01] border-primary z-10" : 
                             isPast ? "bg-muted/40 opacity-50 grayscale border-transparent" : "bg-card hover:border-primary/30"
                         )}
                     >
-                        <div className="flex items-center gap-2 md:gap-3">
+                        <div className="flex items-center gap-1.5 md:gap-2">
                             <span className={cn(
-                                "h-6 w-6 md:h-8 md:w-8 flex items-center justify-center rounded-full text-[10px] md:text-xs font-bold",
+                                "h-5 w-5 md:h-6 md:w-6 flex items-center justify-center rounded-full text-[9px] md:text-[10px] font-bold",
                                 isCurrent ? "bg-white text-primary" : "bg-muted text-muted-foreground"
                             )}>
                                 {index + 1}
                             </span>
-                            <span className="font-bold text-sm md:text-base">{item.label}</span>
+                            <span className="font-bold text-xs md:text-sm">{item.label}</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <Badge variant={isCurrent ? "secondary" : "outline"} className="tabular-nums text-[10px] md:text-xs py-0.5 px-2 md:px-2.5 h-6 md:h-7">
+                        <div className="flex items-center gap-1">
+                            <Badge variant={isCurrent ? "secondary" : "outline"} className="tabular-nums text-[9px] md:text-[10px] py-0 px-1.5 md:px-2 h-5 md:h-6">
                                 {item.startTime} - {item.endTime}
                             </Badge>
                         </div>
