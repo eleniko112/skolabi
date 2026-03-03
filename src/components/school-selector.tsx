@@ -94,7 +94,7 @@ export function SchoolSelector({ schools }: SchoolSelectorProps) {
                   "before:absolute before:inset-0 before:bg-gradient-to-br before:opacity-0 before:transition-opacity group-hover:before:opacity-10",
                   colorIndex === 0 ? "before:from-primary before:to-blue-600 border-t-4 border-t-primary" : 
                   colorIndex === 1 ? "before:from-accent before:to-rose-600 border-t-4 border-t-accent" : 
-                  colorIndex === 2 ? "before:from-indigo-500 before:to-purple-600 border-t-4 border-t-indigo-500" : 
+                  colorIndex === 2 ? "before:from-orange-500 before:to-amber-600 border-t-4 border-t-orange-500" : 
                   "before:from-emerald-500 before:to-teal-600 border-t-4 border-t-emerald-500"
               )}
               onClick={() => handleSchoolSelect(school)}
@@ -104,7 +104,7 @@ export function SchoolSelector({ schools }: SchoolSelectorProps) {
                 "absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150 duration-700 opacity-20",
                 colorIndex === 0 ? "bg-primary" : 
                 colorIndex === 1 ? "bg-accent" : 
-                colorIndex === 2 ? "bg-indigo-500" : 
+                colorIndex === 2 ? "bg-orange-500" : 
                 "bg-emerald-500"
               )} />
               
@@ -113,7 +113,7 @@ export function SchoolSelector({ schools }: SchoolSelectorProps) {
                   "p-6 rounded-2xl mb-6 transition-all duration-500 shadow-sm",
                   colorIndex === 0 ? "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground" : 
                   colorIndex === 1 ? "bg-accent/10 text-accent group-hover:bg-accent group-hover:text-accent-foreground" : 
-                  colorIndex === 2 ? "bg-indigo-500/10 text-indigo-500 group-hover:bg-indigo-500 group-hover:text-white" : 
+                  colorIndex === 2 ? "bg-orange-500/10 text-orange-600 group-hover:bg-orange-500 group-hover:text-white" : 
                   "bg-emerald-500/10 text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white"
                 )}>
                   <SchoolIcon className="w-14 h-14" />
@@ -122,7 +122,7 @@ export function SchoolSelector({ schools }: SchoolSelectorProps) {
                   "font-headline text-2xl mb-2 transition-colors",
                   colorIndex === 0 ? "group-hover:text-primary" : 
                   colorIndex === 1 ? "group-hover:text-accent" : 
-                  colorIndex === 2 ? "group-hover:text-indigo-600" : 
+                  colorIndex === 2 ? "group-hover:text-orange-600" : 
                   "group-hover:text-emerald-600"
                 )}>
                   {school.name}
