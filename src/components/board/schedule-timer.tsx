@@ -116,10 +116,10 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
             </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-1.5 flex-grow flex flex-col pt-3 px-3 md:px-4 overflow-y-auto">
+      <CardContent className="space-y-1 flex-grow flex flex-col pt-3 px-3 md:px-4 overflow-y-auto">
         {status && status.type !== 'ended' ? (
             <div className={cn(
-                "text-center p-2.5 md:p-3 rounded-xl border shadow-inner transition-colors",
+                "text-center p-2 rounded-xl border shadow-inner transition-colors",
                 status.type === 'lesson' ? "bg-primary/5 border-primary/10" : "bg-accent/5 border-accent/10"
             )}>
                 <div className="flex items-center justify-center gap-2 mb-0.5">
@@ -133,7 +133,7 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
                     <p className="text-4xl md:text-5xl font-black text-foreground tracking-tighter tabular-nums leading-none mb-0.5">
                         {formatTime(status.remaining!)}
                     </p>
-                    <Badge variant="outline" className="text-[9px] px-1 py-0 mb-2 bg-background h-4">
+                    <Badge variant="outline" className="text-[9px] px-1 py-0 mb-1 bg-background h-4">
                         მიზანი: {status.targetTime}
                     </Badge>
                 </div>
@@ -147,7 +147,7 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
                 </div>
             </div>
         ) : status?.type === 'ended' ? (
-            <div className="text-center p-3 bg-muted/20 rounded-xl border-2 border-dashed border-muted-foreground/30">
+            <div className="text-center p-2 bg-muted/20 rounded-xl border-2 border-dashed border-muted-foreground/30">
                 <Clock className="h-4 w-4 mx-auto mb-0.5 text-muted-foreground opacity-50" />
                 <h3 className="text-sm font-bold font-headline text-muted-foreground leading-tight">{status.label}</h3>
                 <p className="text-[10px] text-muted-foreground">ხვალამდე!</p>
@@ -158,10 +158,10 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
             </div>
         )}
 
-        <Separator className="mt-0 mb-1" />
+        <Separator className="mt-0.5" />
 
-        <div className="space-y-1.5 flex-1 pb-2">
-          <div className="grid gap-1">
+        <div className="space-y-1.5 flex-1 pb-2 mt-1">
+          <div className="grid gap-2">
             {schedule?.map((item, index) => {
                 const start = timeToSeconds(item.startTime);
                 const end = timeToSeconds(item.endTime);
@@ -172,22 +172,22 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
                     <div 
                         key={item.id || index} 
                         className={cn(
-                            "flex items-center justify-between p-1.5 md:p-2 rounded-lg border transition-all duration-300",
-                            isCurrent ? "bg-primary text-primary-foreground shadow-md scale-[1.01] border-primary z-10" : 
+                            "flex items-center justify-between p-2.5 md:p-4 rounded-xl border transition-all duration-300",
+                            isCurrent ? "bg-primary text-primary-foreground shadow-lg scale-[1.02] border-primary z-10" : 
                             isPast ? "bg-muted/40 opacity-50 grayscale border-transparent" : "bg-card hover:border-primary/30"
                         )}
                     >
-                        <div className="flex items-center gap-2 md:gap-2.5">
+                        <div className="flex items-center gap-3 md:gap-4">
                             <span className={cn(
-                                "h-5 w-5 md:h-6 md:w-6 flex items-center justify-center rounded-full text-[9px] md:text-xs font-bold",
+                                "h-6 w-6 md:h-9 md:w-9 flex items-center justify-center rounded-full text-xs md:text-sm font-bold",
                                 isCurrent ? "bg-white text-primary" : "bg-muted text-muted-foreground"
                             )}>
                                 {index + 1}
                             </span>
-                            <span className="font-bold text-[11px] md:text-sm">{item.label}</span>
+                            <span className="font-bold text-sm md:text-lg">{item.label}</span>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                            <Badge variant={isCurrent ? "secondary" : "outline"} className="tabular-nums text-[9px] md:text-xs py-0 px-1.5 h-5">
+                        <div className="flex items-center gap-2">
+                            <Badge variant={isCurrent ? "secondary" : "outline"} className="tabular-nums text-xs md:text-sm py-1 px-2 md:px-3 h-7 md:h-8">
                                 {item.startTime} - {item.endTime}
                             </Badge>
                         </div>
