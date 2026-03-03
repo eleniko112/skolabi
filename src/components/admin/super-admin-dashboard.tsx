@@ -242,12 +242,16 @@ export function SuperAdminDashboard() {
   return (
     <div className="max-w-6xl mx-auto space-y-8">
       <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-4xl font-bold font-headline text-primary flex items-center gap-3">
-            <LayoutDashboard className="h-10 w-10" />
-            სუპერ ადმინისტრატორის პანელი
-          </h1>
-          <p className="text-muted-foreground mt-1">მართეთ ყველა სკოლა და განახორციელეთ გლობალური ქმედებები.</p>
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-primary rounded-xl shadow-lg">
+            <ShieldAlert className="h-8 w-8 text-primary-foreground" />
+          </div>
+          <div>
+            <h1 className="text-4xl font-bold font-headline text-primary">
+              სუპერ ადმინისტრატორის პანელი
+            </h1>
+            <p className="text-muted-foreground mt-1">მართეთ ყველა სკოლა და განახორციელეთ გლობალური ქმედებები.</p>
+          </div>
         </div>
         <Button asChild variant="outline">
           <Link href="/"><ArrowLeft className="mr-2 h-4 w-4" /> მთავარზე დაბრუნება</Link>
