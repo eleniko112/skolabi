@@ -33,7 +33,8 @@ import {
   PlusCircle, 
   Trash2,
   KeyRound,
-  LayoutDashboard
+  LayoutDashboard,
+  Image as ImageIcon
 } from 'lucide-react';
 import { getSchools, addSchool, deleteSchool } from '@/lib/schools';
 import { addAnnouncement } from '@/lib/announcements';
@@ -59,6 +60,8 @@ const schoolSchema = z.object({
 const globalAnnouncementSchema = z.object({
   title: z.string().min(3, "სათაური აუცილებელია"),
   content: z.string().min(10, "შინაარსი აუცილებელია"),
+  imageUrl: z.string().url("გთხოვთ მიუთითოთ ვალიდური სურათის მისამართი.").or(z.literal('')),
+  imageHint: z.string().optional(),
 });
 
 const globalEmergencySchema = z.object({
@@ -89,7 +92,12 @@ export function SuperAdminDashboard() {
 
   const announcementForm = useForm<z.infer<typeof globalAnnouncementSchema>>({
     resolver: zodResolver(globalAnnouncementSchema),
-    defaultValues: { title: '', content: '' },
+    defaultValues: { 
+      title: '', 
+      content: '',
+      imageUrl: 'https://picsum.photos/seed/global/1200/800',
+      imageHint: 'school news'
+    },
   });
 
   const emergencyForm = useForm<z.infer<typeof globalEmergencySchema>>({
@@ -127,14 +135,19 @@ export function SuperAdminDashboard() {
       addAnnouncement(school.id, {
         title: values.title,
         content: values.content,
-        imageUrl: "https://picsum.photos/seed/global/1200/800",
-        imageHint: "school news",
+        imageUrl: values.imageUrl,
+        imageHint: values.imageHint || "global news",
         startDate: today,
         endDate: farFuture,
       });
     });
     
-    announcementForm.reset();
+    announcementForm.reset({
+      title: '',
+      content: '',
+      imageUrl: 'https://picsum.photos/seed/global/1200/800',
+      imageHint: 'school news'
+    });
     toast({ title: 'განცხადება გაიგზავნა', description: 'განცხადება დაემატა ყველა სკოლის დაფაზე.' });
   };
 
@@ -382,6 +395,30 @@ export function SuperAdminDashboard() {
                         </FormItem>
                       )}
                     />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={announcementForm.control}
+                        name="imageUrl"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="flex items-center gap-2"><ImageIcon className="h-4 w-4" /> სურათის URL</FormLabel>
+                            <FormControl><Input placeholder="https://..." {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={announcementForm.control}
+                        name="imageHint"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>სურათის აღწერა (AI)</FormLabel>
+                            <FormControl><Input placeholder="მაგ: school concert" {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                     <Button type="submit" className="w-full">
                       გაგზავნა ყველა სკოლაში
                     </Button>
