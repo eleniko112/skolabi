@@ -187,7 +187,7 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
                             <span className="font-bold text-sm md:text-base">{item.label}</span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                            <Badge variant={isCurrent ? "secondary" : "outline"} className="tabular-nums text-[10px] md:text-xs py-0 px-1.5 md:px-2 h-5 md:h-6">
+                            <Badge variant={isCurrent ? "secondary" : "outline"} className="tabular-nums text-xs md:text-sm py-0 px-1.5 md:px-2 h-5 md:h-6">
                                 {item.startTime} - {item.endTime}
                             </Badge>
                         </div>
