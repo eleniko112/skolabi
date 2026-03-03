@@ -116,10 +116,10 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
             </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-0.5 flex-grow flex flex-col pt-1.5 px-2 md:px-3 overflow-y-auto">
+      <CardContent className="space-y-0 flex-grow flex flex-col pt-1.5 px-2 md:px-3 overflow-y-auto">
         {status && status.type !== 'ended' ? (
             <div className={cn(
-                "text-center p-2 rounded-xl border shadow-inner transition-colors",
+                "text-center p-2 rounded-xl border shadow-inner transition-colors mb-1.5",
                 status.type === 'lesson' ? "bg-primary/5 border-primary/10" : "bg-accent/5 border-accent/10"
             )}>
                 <div className="flex items-center justify-center gap-1.5 mb-1">
@@ -147,21 +147,21 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
                 </div>
             </div>
         ) : status?.type === 'ended' ? (
-            <div className="text-center p-3 bg-muted/20 rounded-lg border-2 border-dashed border-muted-foreground/30">
+            <div className="text-center p-3 bg-muted/20 rounded-lg border-2 border-dashed border-muted-foreground/30 mb-0.5">
                 <Clock className="h-4 w-4 mx-auto mb-1 text-muted-foreground opacity-50" />
-                <h3 className="text-xs font-bold font-headline text-muted-foreground leading-tight">{status.label}</h3>
+                <h3 className="text-sm font-bold font-headline text-muted-foreground leading-tight">{status.label}</h3>
                 <p className="text-[10px] text-muted-foreground">ხვალამდე!</p>
             </div>
         ) : (
-            <div className="text-center p-2 bg-muted/20 rounded-lg border-2 border-dashed border-muted-foreground/30">
+            <div className="text-center p-2 bg-muted/20 rounded-lg border-2 border-dashed border-muted-foreground/30 mb-1.5">
                 <p className="text-muted-foreground text-xs font-headline">განრიგი არ არის დამატებული</p>
             </div>
         )}
 
-        <Separator className="mt-0" />
+        <Separator className="mt-0 mb-1" />
 
-        <div className="space-y-1 flex-1 pb-2 mt-0.5">
-          <div className="grid gap-1.5">
+        <div className="space-y-1 flex-1 pb-2">
+          <div className="grid gap-1">
             {schedule?.map((item, index) => {
                 const start = timeToSeconds(item.startTime);
                 const end = timeToSeconds(item.endTime);
@@ -172,22 +172,22 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
                     <div 
                         key={item.id || index} 
                         className={cn(
-                            "flex items-center justify-between p-2 md:p-3 rounded-lg border transition-all duration-300",
+                            "flex items-center justify-between p-1.5 md:p-2 rounded-lg border transition-all duration-300",
                             isCurrent ? "bg-primary text-primary-foreground shadow-lg scale-[1.01] border-primary z-10" : 
                             isPast ? "bg-muted/40 opacity-50 grayscale border-transparent" : "bg-card hover:border-primary/30"
                         )}
                     >
                         <div className="flex items-center gap-2 md:gap-3">
                             <span className={cn(
-                                "h-7 w-7 md:h-8 md:w-8 flex items-center justify-center rounded-full text-xs md:text-sm font-bold",
+                                "h-6 w-6 md:h-7 md:w-7 flex items-center justify-center rounded-full text-[10px] md:text-xs font-bold",
                                 isCurrent ? "bg-white text-primary" : "bg-muted text-muted-foreground"
                             )}>
                                 {index + 1}
                             </span>
-                            <span className="font-bold text-sm md:text-base">{item.label}</span>
+                            <span className="font-bold text-xs md:text-sm">{item.label}</span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                            <Badge variant={isCurrent ? "secondary" : "outline"} className="tabular-nums text-xs md:text-sm py-0.5 px-2 md:px-2.5 h-6 md:h-7">
+                            <Badge variant={isCurrent ? "secondary" : "outline"} className="tabular-nums text-[10px] md:text-xs py-0 px-1.5 md:px-2 h-5 md:h-6">
                                 {item.startTime} - {item.endTime}
                             </Badge>
                         </div>
