@@ -100,50 +100,50 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
   if (isLoading) {
     return (
         <Card className="shadow-xl rounded-xl flex flex-col h-full">
-            <CardHeader><CardTitle className="text-2xl font-headline"><Clock className="inline mr-2" />განრიგი</CardTitle></CardHeader>
-            <CardContent className="flex items-center justify-center flex-grow"><Loader2 className="animate-spin text-primary" /></CardContent>
+            <CardHeader className="p-3 md:p-4"><CardTitle className="text-xl font-headline"><Clock className="inline mr-2" />განრიგი</CardTitle></CardHeader>
+            <CardContent className="flex items-center justify-center flex-grow p-4"><Loader2 className="animate-spin text-primary" /></CardContent>
         </Card>
     );
   }
 
   return (
     <Card className="shadow-xl rounded-xl flex flex-col h-full overflow-hidden border-2">
-      <CardHeader className="bg-muted/30">
+      <CardHeader className="bg-muted/30 p-3 md:p-4">
         <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-3 text-primary font-headline text-2xl">
-            <Clock className="h-7 w-7" />
+            <CardTitle className="flex items-center gap-2 text-primary font-headline text-xl md:text-2xl">
+            <Clock className="h-6 w-6 md:h-7 md:w-7" />
             ზარების განრიგი
             </CardTitle>
-            <div className="text-xl font-bold font-mono text-muted-foreground tabular-nums">
+            <div className="text-lg md:text-xl font-bold font-mono text-muted-foreground tabular-nums">
                 {now.toLocaleTimeString('ka-GE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
             </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-6 flex-grow flex flex-col pt-6 overflow-y-auto">
+      <CardContent className="space-y-4 flex-grow flex flex-col pt-3 md:pt-4 px-3 md:px-4 overflow-y-auto">
         {status && status.type !== 'ended' ? (
             <div className={cn(
-                "text-center p-8 rounded-2xl border-2 shadow-inner transition-colors",
+                "text-center p-4 md:p-6 rounded-xl border-2 shadow-inner transition-colors",
                 status.type === 'lesson' ? "bg-primary/5 border-primary/20" : "bg-accent/5 border-accent/20"
             )}>
-                <div className="flex items-center justify-center gap-2 mb-2">
-                    {status.type === 'lesson' ? <Bell className="h-5 w-5 text-primary animate-ring" /> : <Hourglass className="h-5 w-5 text-accent animate-spin-slow" />}
-                    <p className={cn("text-lg font-bold font-headline", status.type === 'lesson' ? "text-primary" : "text-accent")}>
+                <div className="flex items-center justify-center gap-2 mb-1">
+                    {status.type === 'lesson' ? <Bell className="h-4 w-4 text-primary animate-ring" /> : <Hourglass className="h-4 w-4 text-accent animate-spin-slow" />}
+                    <p className={cn("text-base font-bold font-headline", status.type === 'lesson' ? "text-primary" : "text-accent")}>
                         {status.label}
                     </p>
                 </div>
                 
                 <div className="flex flex-col items-center">
-                    <p className="text-7xl font-black text-foreground tracking-tighter tabular-nums mb-1">
+                    <p className="text-5xl md:text-6xl font-black text-foreground tracking-tighter tabular-nums leading-none mb-1">
                         {formatTime(status.remaining!)}
                     </p>
-                    <Badge variant="outline" className="text-sm px-4 py-1 mb-6 bg-background">
+                    <Badge variant="outline" className="text-xs px-2 py-0.5 mb-4 bg-background">
                         მიზანი: {status.targetTime}
                     </Badge>
                 </div>
 
-                <div className="space-y-2">
-                    <Progress value={status.progress} className={cn("h-3 shadow-sm", status.type === 'lesson' ? "bg-primary/20" : "bg-accent/20")} />
-                    <div className="flex justify-between text-xs font-medium text-muted-foreground">
+                <div className="space-y-1">
+                    <Progress value={status.progress} className={cn("h-2 shadow-sm", status.type === 'lesson' ? "bg-primary/20" : "bg-accent/20")} />
+                    <div className="flex justify-between text-[10px] md:text-xs font-medium text-muted-foreground">
                         <span>{status.periodLabel}</span>
                         <span>{Math.round(status.progress!)}%</span>
                     </div>
@@ -151,21 +151,21 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
             </div>
         ) : status?.type === 'ended' ? (
             <div className="text-center p-4 bg-muted/20 rounded-lg border-2 border-dashed border-muted-foreground/30">
-                <Clock className="h-6 w-6 mx-auto mb-2 text-muted-foreground opacity-50" />
-                <h3 className="text-base font-bold font-headline text-muted-foreground">{status.label}</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">ხვალამდე!</p>
+                <Clock className="h-5 w-5 mx-auto mb-1 text-muted-foreground opacity-50" />
+                <h3 className="text-sm font-bold font-headline text-muted-foreground">{status.label}</h3>
+                <p className="text-[10px] text-muted-foreground mt-0.5">ხვალამდე!</p>
             </div>
         ) : (
             <div className="text-center p-4 bg-muted/20 rounded-lg border-2 border-dashed border-muted-foreground/30">
-                <p className="text-muted-foreground text-sm font-headline">განრიგი არ არის დამატებული</p>
+                <p className="text-muted-foreground text-xs font-headline">განრიგი არ არის დამატებული</p>
             </div>
         )}
 
-        <Separator />
+        <Separator className="my-2" />
 
-        <div className="space-y-3 flex-1">
-          <h4 className="text-sm font-bold text-muted-foreground uppercase tracking-wider px-2">დღევანდელი პერიოდები</h4>
-          <div className="grid gap-2">
+        <div className="space-y-2 flex-1 pb-4">
+          <h4 className="text-[10px] md:text-xs font-bold text-muted-foreground uppercase tracking-wider px-1">დღევანდელი პერიოდები</h4>
+          <div className="grid gap-1.5">
             {schedule?.map((item, index) => {
                 const start = timeToSeconds(item.startTime);
                 const end = timeToSeconds(item.endTime);
@@ -176,22 +176,22 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
                     <div 
                         key={item.id || index} 
                         className={cn(
-                            "flex items-center justify-between p-4 rounded-xl border transition-all duration-300",
-                            isCurrent ? "bg-primary text-primary-foreground shadow-lg scale-[1.02] border-primary" : 
-                            isPast ? "bg-muted/40 opacity-60 grayscale border-transparent" : "bg-card hover:border-primary/50"
+                            "flex items-center justify-between p-2 md:p-3 rounded-lg border transition-all duration-300",
+                            isCurrent ? "bg-primary text-primary-foreground shadow-md scale-[1.01] border-primary" : 
+                            isPast ? "bg-muted/40 opacity-50 grayscale border-transparent" : "bg-card hover:border-primary/40"
                         )}
                     >
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 md:gap-3">
                             <span className={cn(
-                                "h-8 w-8 flex items-center justify-center rounded-full text-xs font-bold",
+                                "h-6 w-6 md:h-7 md:w-7 flex items-center justify-center rounded-full text-[10px] md:text-xs font-bold",
                                 isCurrent ? "bg-white text-primary" : "bg-muted text-muted-foreground"
                             )}>
                                 {index + 1}
                             </span>
-                            <span className="font-bold text-base">{item.label}</span>
+                            <span className="font-bold text-sm md:text-base">{item.label}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                            <Badge variant={isCurrent ? "secondary" : "outline"} className="tabular-nums text-sm py-1">
+                            <Badge variant={isCurrent ? "secondary" : "outline"} className="tabular-nums text-[10px] md:text-xs py-0.5 px-2">
                                 {item.startTime} - {item.endTime}
                             </Badge>
                         </div>
