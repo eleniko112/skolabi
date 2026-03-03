@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
@@ -34,15 +34,20 @@ import {
   Trash2,
   KeyRound,
   LayoutDashboard,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Calendar,
+  Save,
+  RefreshCcw
 } from 'lucide-react';
 import { getSchools, addSchool, deleteSchool } from '@/lib/schools';
 import { addAnnouncement } from '@/lib/announcements';
 import { setEmergencyState } from '@/lib/emergency';
+import { setSchedule, defaultSchedule } from '@/lib/schedule';
 import { School } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
 
 const SUPER_PIN = '9999';
 
@@ -66,6 +71,16 @@ const globalAnnouncementSchema = z.object({
 
 const globalEmergencySchema = z.object({
   message: z.string().min(10, "შეტყობინება აუცილებელია"),
+});
+
+const scheduleItemSchema = z.object({
+  startTime: z.string().regex(/^\d{2}:\d{2}$/, "HH:MM"),
+  endTime: z.string().regex(/^\d{2}:\d{2}$/, "HH:MM"),
+  label: z.string().min(1, "სავალდებულო"),
+});
+
+const globalScheduleSchema = z.object({
+  periods: z.array(scheduleItemSchema),
 });
 
 export function SuperAdminDashboard() {
@@ -103,6 +118,18 @@ export function SuperAdminDashboard() {
   const emergencyForm = useForm<z.infer<typeof globalEmergencySchema>>({
     resolver: zodResolver(globalEmergencySchema),
     defaultValues: { message: 'საგანგებო სიტუაცია! გთხოვთ დატოვოთ შენობა.' },
+  });
+
+  const scheduleForm = useForm<z.infer<typeof globalScheduleSchema>>({
+    resolver: zodResolver(globalScheduleSchema),
+    defaultValues: {
+      periods: defaultSchedule,
+    },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control: scheduleForm.control,
+    name: "periods",
   });
 
   const onPinSubmit = (values: z.infer<typeof pinSchema>) => {
@@ -158,6 +185,17 @@ export function SuperAdminDashboard() {
     toast({ 
       title: active ? 'საგანგებო რეჟიმი გააქტიურდა' : 'საგანგებო რეჟიმი გამოირთო',
       variant: active ? 'destructive' : 'default'
+    });
+  };
+
+  const onGlobalSchedule = (values: z.infer<typeof globalScheduleSchema>) => {
+    const sortedPeriods = [...values.periods].sort((a, b) => a.startTime.localeCompare(b.startTime));
+    schools.forEach(school => {
+      setSchedule(school.id, sortedPeriods);
+    });
+    toast({ 
+      title: 'განრიგი განახლდა', 
+      description: 'ახალი ზარების განრიგი დაყენდა ყველა სკოლაში.' 
     });
   };
 
@@ -322,106 +360,195 @@ export function SuperAdminDashboard() {
         </TabsContent>
 
         <TabsContent value="global" className="space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <Card className="border-destructive/20 bg-destructive/5">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-destructive">
-                  <ShieldAlert className="h-6 w-6" /> გლობალური საგანგებო რეჟიმი
-                </CardTitle>
-                <CardDescription>ეს რეჟიმი გააქტიურდება ყველა სკოლის დაფაზე ერთდროულად.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Form {...emergencyForm}>
-                  <form className="space-y-4">
-                    <FormField
-                      control={emergencyForm.control}
-                      name="message"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>საგანგებო შეტყობინება</FormLabel>
-                          <FormControl><Textarea className="bg-background" {...field} /></FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <div className="flex gap-2">
-                      <Button 
-                        type="button" 
-                        variant="destructive" 
-                        className="flex-1"
-                        onClick={() => onGlobalEmergency(emergencyForm.getValues(), true)}
-                      >გააქტიურება ყველგან</Button>
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        className="flex-1"
-                        onClick={() => onGlobalEmergency(emergencyForm.getValues(), false)}
-                      >გამორთვა ყველგან</Button>
-                    </div>
-                  </form>
-                </Form>
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="space-y-8">
+              <Card className="border-destructive/20 bg-destructive/5">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-destructive">
+                    <ShieldAlert className="h-6 w-6" /> გლობალური საგანგებო რეჟიმი
+                  </CardTitle>
+                  <CardDescription>ეს რეჟიმი გააქტიურდება ყველა სკოლის დაფაზე ერთდროულად.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Form {...emergencyForm}>
+                    <form className="space-y-4">
+                      <FormField
+                        control={emergencyForm.control}
+                        name="message"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>საგანგებო შეტყობინება</FormLabel>
+                            <FormControl><Textarea className="bg-background" {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <div className="flex gap-2">
+                        <Button 
+                          type="button" 
+                          variant="destructive" 
+                          className="flex-1"
+                          onClick={() => onGlobalEmergency(emergencyForm.getValues(), true)}
+                        >გააქტიურება ყველგან</Button>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          className="flex-1"
+                          onClick={() => onGlobalEmergency(emergencyForm.getValues(), false)}
+                        >გამორთვა ყველგან</Button>
+                      </div>
+                    </form>
+                  </Form>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-primary">
+                    <Megaphone className="h-6 w-6" /> გლობალური განცხადება
+                  </CardTitle>
+                  <CardDescription>ეს განცხადება გამოჩნდება ყველა სკოლის დაფაზე.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Form {...announcementForm}>
+                    <form onSubmit={announcementForm.handleSubmit(onGlobalAnnouncement)} className="space-y-4">
+                      <FormField
+                        control={announcementForm.control}
+                        name="title"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>სათაური</FormLabel>
+                            <FormControl><Input placeholder="გლობალური სიახლე" {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={announcementForm.control}
+                        name="content"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>შინაარსი</FormLabel>
+                            <FormControl><Textarea className="min-h-[100px]" {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={announcementForm.control}
+                          name="imageUrl"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="flex items-center gap-2"><ImageIcon className="h-4 w-4" /> სურათის URL</FormLabel>
+                              <FormControl><Input placeholder="https://..." {...field} /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={announcementForm.control}
+                          name="imageHint"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>სურათის აღწერა (AI)</FormLabel>
+                              <FormControl><Input placeholder="მაგ: school concert" {...field} /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <Button type="submit" className="w-full">
+                        გაგზავნა ყველა სკოლაში
+                      </Button>
+                    </form>
+                  </Form>
+                </CardContent>
+              </Card>
+            </div>
 
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-primary">
-                  <Megaphone className="h-6 w-6" /> გლობალური განცხადება
+                  <Calendar className="h-6 w-6" /> გლობალური ზარების განრიგი
                 </CardTitle>
-                <CardDescription>ეს განცხადება გამოჩნდება ყველა სკოლის დაფაზე.</CardDescription>
+                <CardDescription>დააყენეთ ერთიანი განრიგი ყველა სკოლისთვის.</CardDescription>
               </CardHeader>
               <CardContent>
-                <Form {...announcementForm}>
-                  <form onSubmit={announcementForm.handleSubmit(onGlobalAnnouncement)} className="space-y-4">
-                    <FormField
-                      control={announcementForm.control}
-                      name="title"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>სათაური</FormLabel>
-                          <FormControl><Input placeholder="გლობალური სიახლე" {...field} /></FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={announcementForm.control}
-                      name="content"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>შინაარსი</FormLabel>
-                          <FormControl><Textarea className="min-h-[100px]" {...field} /></FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={announcementForm.control}
-                        name="imageUrl"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="flex items-center gap-2"><ImageIcon className="h-4 w-4" /> სურათის URL</FormLabel>
-                            <FormControl><Input placeholder="https://..." {...field} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={announcementForm.control}
-                        name="imageHint"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>სურათის აღწერა (AI)</FormLabel>
-                            <FormControl><Input placeholder="მაგ: school concert" {...field} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                <Form {...scheduleForm}>
+                  <form onSubmit={scheduleForm.handleSubmit(onGlobalSchedule)} className="space-y-6">
+                    <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2">
+                      {fields.map((field, index) => (
+                        <div key={field.id} className="flex items-end gap-2 p-3 border rounded-lg bg-muted/20">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 flex-grow">
+                            <FormField
+                              control={scheduleForm.control}
+                              name={`periods.${index}.startTime`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="text-xs">დაწყება</FormLabel>
+                                  <FormControl><Input type="time" className="h-8" {...field} /></FormControl>
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={scheduleForm.control}
+                              name={`periods.${index}.endTime`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="text-xs">დასრულება</FormLabel>
+                                  <FormControl><Input type="time" className="h-8" {...field} /></FormControl>
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={scheduleForm.control}
+                              name={`periods.${index}.label`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="text-xs">აღწერა</FormLabel>
+                                  <FormControl><Input placeholder="გაკვეთილი" className="h-8" {...field} /></FormControl>
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                          <Button 
+                            type="button" 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-destructive"
+                            onClick={() => remove(index)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
                     </div>
-                    <Button type="submit" className="w-full">
-                      გაგზავნა ყველა სკოლაში
-                    </Button>
+                    
+                    <div className="flex flex-col gap-4">
+                      <div className="flex justify-between items-center">
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => append({ startTime: '09:00', endTime: '09:45', label: 'ახალი პერიოდი' })}
+                        >
+                          <PlusCircle className="mr-2 h-4 w-4" /> დამატება
+                        </Button>
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => scheduleForm.reset({ periods: defaultSchedule })}
+                        >
+                          <RefreshCcw className="mr-2 h-4 w-4" /> საწყისზე დაბრუნება
+                        </Button>
+                      </div>
+                      <Separator />
+                      <Button type="submit" className="w-full">
+                        <Save className="mr-2 h-4 w-4" /> ყველა სკოლის განახლება
+                      </Button>
+                    </div>
                   </form>
                 </Form>
               </CardContent>
