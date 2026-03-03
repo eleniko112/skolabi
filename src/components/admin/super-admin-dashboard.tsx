@@ -31,7 +31,6 @@ import {
   ChevronUp,
   ChevronDown,
   Palette,
-  ExternalLink,
   Settings
 } from 'lucide-react';
 import { useCollection, useMemoFirebase, useFirestore } from '@/firebase';
