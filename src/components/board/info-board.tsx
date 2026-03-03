@@ -86,9 +86,9 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
                   <CarouselContent className="h-full ml-0">
                     {filteredAnnouncements.map((ann, index) => (
                         <CarouselItem key={ann.id} className="h-full pl-0">
-                          <div className="flex flex-col h-full w-full overflow-hidden">
+                          <div className="flex flex-col md:flex-row h-full w-full overflow-hidden">
                             {ann.imageUrl && (
-                              <div className="w-full aspect-[25/9] relative overflow-hidden flex-shrink-0 bg-muted shadow-inner">
+                              <div className="w-full md:w-[40%] h-48 md:h-full relative overflow-hidden flex-shrink-0 bg-muted shadow-inner border-b md:border-b-0 md:border-r">
                                 <Image
                                   src={ann.imageUrl}
                                   alt={ann.title}
@@ -99,8 +99,8 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
                                 />
                               </div>
                             )}
-                            <div className="flex-1 flex flex-col p-4 md:p-8 min-h-0 overflow-hidden">
-                                <h2 className="text-xl md:text-2xl lg:text-3xl font-bold font-headline text-foreground mb-3 leading-tight shrink-0">
+                            <div className="flex-1 flex flex-col p-4 md:p-8 min-h-0 overflow-hidden md:w-[60%]">
+                                <h2 className="text-xl md:text-2xl lg:text-3xl font-bold font-headline text-foreground mb-4 leading-tight shrink-0">
                                     {ann.title}
                                 </h2>
                                 <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-0">
