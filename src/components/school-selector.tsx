@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -82,54 +81,48 @@ export function SchoolSelector({ schools }: SchoolSelectorProps) {
   return (
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 px-4">
-        {schools.map((school, index) => {
-          // We use modulo 5 to rotate through a wider variety of colors
-          const colorIndex = index % 5;
+        {schools.map((school) => {
+          const customColor = school.cardColor || "221 39% 49%"; // Fallback to blue
+          
           return (
             <Card
               key={school.id}
               className={cn(
                   "group relative cursor-pointer transition-all duration-500 overflow-hidden",
                   "bg-white/70 backdrop-blur-md hover:bg-white hover:shadow-2xl hover:-translate-y-2",
-                  "border-2 border-transparent hover:border-primary/20",
-                  "before:absolute before:inset-0 before:bg-gradient-to-br before:opacity-0 before:transition-opacity group-hover:before:opacity-10",
-                  colorIndex === 0 ? "before:from-red-700 before:to-rose-900 border-t-4 border-t-red-700" : // Cherry Red
-                  colorIndex === 1 ? "before:from-accent before:to-rose-600 border-t-4 border-t-accent" : 
-                  colorIndex === 2 ? "before:from-orange-500 before:to-amber-600 border-t-4 border-t-orange-500" : 
-                  colorIndex === 3 ? "before:from-emerald-700 before:to-teal-900 border-t-4 border-t-emerald-700" :
-                  "before:from-primary before:to-blue-600 border-t-4 border-t-primary" // Professional Blue
+                  "border-2 border-transparent"
               )}
+              style={{ 
+                borderTop: `4px solid hsl(${customColor})`,
+              } as React.CSSProperties}
               onClick={() => handleSchoolSelect(school)}
             >
-              {/* Background highlight pattern */}
-              <div className={cn(
-                "absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150 duration-700 opacity-20",
-                colorIndex === 0 ? "bg-red-700" : 
-                colorIndex === 1 ? "bg-accent" : 
-                colorIndex === 2 ? "bg-orange-500" : 
-                colorIndex === 3 ? "bg-emerald-700" :
-                "bg-primary"
-              )} />
+              {/* Custom background highlight */}
+              <div 
+                className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500 pointer-events-none"
+                style={{ background: `linear-gradient(to bottom right, hsl(${customColor}), transparent)` }}
+              />
+              
+              {/* Decorative circle */}
+              <div 
+                className="absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150 duration-700 opacity-20"
+                style={{ backgroundColor: `hsl(${customColor})` }}
+              />
               
               <CardHeader className="items-center text-center p-10 relative z-10">
-                <div className={cn(
-                  "p-6 rounded-2xl mb-6 transition-all duration-500 shadow-sm",
-                  colorIndex === 0 ? "bg-red-700/10 text-red-700 group-hover:bg-red-700 group-hover:text-white" : 
-                  colorIndex === 1 ? "bg-accent/10 text-accent group-hover:bg-accent group-hover:text-accent-foreground" : 
-                  colorIndex === 2 ? "bg-orange-500/10 text-orange-600 group-hover:bg-orange-500 group-hover:text-white" : 
-                  colorIndex === 3 ? "bg-emerald-700/10 text-emerald-700 group-hover:bg-emerald-700 group-hover:text-white" :
-                  "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground"
-                )}>
+                <div 
+                  className="p-6 rounded-2xl mb-6 transition-all duration-500 shadow-sm"
+                  style={{ 
+                    backgroundColor: `hsla(${customColor}, 0.1)`, 
+                    color: `hsl(${customColor})` 
+                  }}
+                >
                   <SchoolIcon className="w-14 h-14" />
                 </div>
-                <CardTitle className={cn(
-                  "font-headline text-2xl mb-2 transition-colors",
-                  colorIndex === 0 ? "group-hover:text-red-800" : 
-                  colorIndex === 1 ? "group-hover:text-accent" : 
-                  colorIndex === 2 ? "group-hover:text-orange-600" : 
-                  colorIndex === 3 ? "group-hover:text-emerald-800" :
-                  "group-hover:text-primary"
-                )}>
+                <CardTitle 
+                  className="font-headline text-2xl mb-2 transition-colors"
+                  style={{ color: `hsl(${customColor})` }}
+                >
                   {school.name}
                 </CardTitle>
                 <div className="flex items-center gap-2 text-muted-foreground text-sm font-medium opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">

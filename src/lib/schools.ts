@@ -14,6 +14,7 @@ const defaultSchools: School[] = [
     password: '1111', 
     adminPin: '1234',
     logoUrl: PlaceHolderImages.find(i => i.id === 'school-logo-1')?.imageUrl || '',
+    cardColor: "221 39% 49%", // Blue
   },
   { 
     id: '7-sajaro-skola',
@@ -21,6 +22,7 @@ const defaultSchools: School[] = [
     password: '7777',
     adminPin: '1234',
     logoUrl: PlaceHolderImages.find(i => i.id === 'school-logo-7')?.imageUrl || '',
+    cardColor: "347 77% 60%", // Rose/Pink
   },
   { 
     id: '3-sajaro-skola',
@@ -28,6 +30,7 @@ const defaultSchools: School[] = [
     password: '3333',
     adminPin: '1234',
     logoUrl: PlaceHolderImages.find(i => i.id === 'school-logo-3')?.imageUrl || '',
+    cardColor: "24 95% 53%", // Orange
   },
 ];
 

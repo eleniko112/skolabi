@@ -4,6 +4,7 @@ export interface School {
   password?: string;
   adminPin?: string;
   logoUrl?: string;
+  cardColor?: string; // HSL format: "H S% L%"
 }
 
 export interface Bell {

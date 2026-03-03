@@ -39,7 +39,8 @@ import {
   Calendar,
   Save,
   RefreshCcw,
-  Palette
+  Palette,
+  Layout
 } from 'lucide-react';
 import { getSchools, addSchool, deleteSchool } from '@/lib/schools';
 import { addAnnouncement } from '@/lib/announcements';
@@ -64,6 +65,7 @@ const schoolSchema = z.object({
   name: z.string().min(3, "სახელი უნდა იყოს მინიმუმ 3 სიმბოლო"),
   password: z.string().min(4, "პაროლი უნდა იყოს მინიმუმ 4 სიმბოლო"),
   adminPin: z.string().length(4, "ადმინ PIN უნდა იყოს 4 სიმბოლო"),
+  cardColor: z.string(),
   background: z.string(),
   primary: z.string(),
   accent: z.string(),
@@ -116,6 +118,7 @@ export function SuperAdminDashboard() {
       name: '', 
       password: '', 
       adminPin: '',
+      cardColor: '221 39% 49%',
       background: defaultTheme.background,
       primary: defaultTheme.primary,
       accent: defaultTheme.accent,
@@ -163,10 +166,11 @@ export function SuperAdminDashboard() {
       id: values.id,
       name: values.name,
       password: values.password,
-      adminPin: values.adminPin
+      adminPin: values.adminPin,
+      cardColor: values.cardColor
     });
     
-    // Set custom theme for the new school
+    // Set board theme for the new school
     setTheme(values.id, {
       background: values.background,
       primary: values.primary,
@@ -403,7 +407,31 @@ export function SuperAdminDashboard() {
                     <Separator />
                     
                     <div className="space-y-4">
-                      <h4 className="text-sm font-semibold flex items-center gap-2"><Palette className="h-4 w-4" /> თემის ფერები</h4>
+                      <h4 className="text-sm font-semibold flex items-center gap-2 text-primary"><Layout className="h-4 w-4" /> მთავარი გვერდის ბარათი</h4>
+                      <FormField
+                        control={schoolForm.control}
+                        name="cardColor"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">ბარათის ფერი</FormLabel>
+                            <div className="flex gap-2">
+                              <FormControl><Input className="h-8 text-xs" {...field} /></FormControl>
+                              <Input 
+                                type="color" 
+                                className="w-10 h-8 p-1 cursor-pointer" 
+                                value={hslToHex(field.value)} 
+                                onChange={(e) => field.onChange(hexToHsl(e.target.value))} 
+                              />
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <Separator />
+
+                    <div className="space-y-4">
+                      <h4 className="text-sm font-semibold flex items-center gap-2 text-primary"><Palette className="h-4 w-4" /> სკოლის დაფის თემა</h4>
                       
                       <FormField
                         control={schoolForm.control}
