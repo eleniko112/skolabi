@@ -161,7 +161,6 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
         <Separator className="mt-0 mb-1" />
 
         <div className="space-y-1.5 flex-1 pb-2">
-          <h4 className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest px-1">დღევანდელი პერიოდები</h4>
           <div className="grid gap-1">
             {schedule?.map((item, index) => {
                 const start = timeToSeconds(item.startTime);
