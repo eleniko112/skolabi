@@ -63,9 +63,9 @@ export default function BoardPage() {
                 <SchoolIcon className="h-6 w-6 text-muted-foreground" />
             </div>
           )}
-          <h1 className="text-3xl font-bold font-headline text-primary">{schoolInfo.name}</h1>
+          <h1 className="text-2xl md:text-3xl font-bold font-headline text-primary truncate max-w-[50vw]">{schoolInfo.name}</h1>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 md:gap-4">
           <QRCodeDisplay schoolId={schoolId} />
           <Button asChild variant="outline" size="icon">
             <Link href="/">
@@ -82,7 +82,7 @@ export default function BoardPage() {
         </div>
       </header>
       
-      <main className="flex-1 p-6 grid grid-cols-1 md:grid-cols-[30%_70%] gap-6 overflow-hidden">
+      <main className="flex-1 p-4 md:p-6 grid grid-cols-1 md:grid-cols-[30%_70%] gap-4 md:gap-6 overflow-hidden min-h-0">
         <ScheduleTimer schoolId={schoolId} />
         <InfoBoard schoolId={schoolId} />
       </main>

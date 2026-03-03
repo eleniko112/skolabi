@@ -45,8 +45,8 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
 
     if (!filteredAnnouncements || filteredAnnouncements.length === 0) {
         return (
-            <Card className="w-full h-full shadow-xl rounded-xl flex flex-col border">
-                 <CardHeader className="p-3 md:p-4 border-b bg-muted/10">
+            <Card className="w-full h-full shadow-xl rounded-xl flex flex-col border overflow-hidden">
+                 <CardHeader className="p-3 md:p-4 border-b bg-muted/10 flex-shrink-0">
                     <CardTitle className="flex items-center gap-2 text-primary font-headline text-lg md:text-xl">
                         <Megaphone className="h-5 w-5"/>
                         განცხადებები
@@ -64,15 +64,15 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
 
     return (
         <Card className="w-full h-full shadow-xl rounded-xl flex flex-col overflow-hidden border">
-            <CardHeader className="bg-muted/30 p-3 md:p-4 border-b">
+            <CardHeader className="bg-muted/30 p-3 md:p-4 border-b flex-shrink-0">
                 <CardTitle className="flex items-center gap-2 text-primary font-headline text-lg md:text-xl">
                     <Megaphone className="h-5 w-5"/>
                     განცხადებები
                 </CardTitle>
             </CardHeader>
-            <CardContent className="p-0 flex-grow relative overflow-hidden">
+            <CardContent className="p-0 flex-grow relative min-h-0">
                 <Carousel 
-                    className="w-full h-full"
+                    className="absolute inset-0 w-full h-full"
                     plugins={[
                         Autoplay({
                           delay: 8000,
@@ -88,7 +88,7 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
                         <CarouselItem key={ann.id} className="h-full pl-0">
                           <div className="flex flex-col h-full w-full overflow-hidden">
                             {ann.imageUrl && (
-                              <div className="w-full aspect-[21/9] relative overflow-hidden flex-shrink-0 bg-muted shadow-inner">
+                              <div className="w-full aspect-[25/9] relative overflow-hidden flex-shrink-0 bg-muted shadow-inner">
                                 <Image
                                   src={ann.imageUrl}
                                   alt={ann.title}
@@ -99,12 +99,12 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
                                 />
                               </div>
                             )}
-                            <div className="flex-1 flex flex-col p-6 md:p-8 min-h-0 overflow-hidden">
-                                <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold font-headline text-foreground mb-4 leading-tight shrink-0">
+                            <div className="flex-1 flex flex-col p-4 md:p-8 min-h-0 overflow-hidden">
+                                <h2 className="text-xl md:text-2xl lg:text-3xl font-bold font-headline text-foreground mb-3 leading-tight shrink-0">
                                     {ann.title}
                                 </h2>
                                 <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-0">
-                                    <p className="text-lg md:text-xl text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                                    <p className="text-base md:text-lg lg:text-xl text-muted-foreground leading-relaxed whitespace-pre-wrap">
                                         {ann.content}
                                     </p>
                                 </div>
@@ -115,8 +115,8 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
                   </CarouselContent>
                   {filteredAnnouncements.length > 1 && (
                     <>
-                      <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 z-10 h-12 w-12 bg-background/40 hover:bg-background/80 backdrop-blur-sm border-none shadow-lg transition-all" />
-                      <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 z-10 h-12 w-12 bg-background/40 hover:bg-background/80 backdrop-blur-sm border-none shadow-lg transition-all" />
+                      <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 md:h-12 md:w-12 bg-background/40 hover:bg-background/80 backdrop-blur-sm border-none shadow-lg transition-all" />
+                      <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 md:h-12 md:w-12 bg-background/40 hover:bg-background/80 backdrop-blur-sm border-none shadow-lg transition-all" />
                     </>
                   )}
                 </Carousel>
