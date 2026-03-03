@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -46,17 +47,16 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
     if (!filteredAnnouncements || filteredAnnouncements.length === 0) {
         return (
             <Card className="w-full shadow-xl rounded-xl flex flex-col">
-                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-primary font-headline">
-                        <Megaphone className="h-6 w-6"/>
+                 <CardHeader className="p-3 md:p-4">
+                    <CardTitle className="flex items-center gap-2 text-primary font-headline text-lg md:text-xl">
+                        <Megaphone className="h-5 w-5"/>
                         განცხადებები
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="flex items-center justify-center bg-muted/20 flex-grow p-6">
                     <div className="text-center text-muted-foreground">
-                        <Megaphone className="h-16 w-16 mx-auto mb-4" />
-                        <h2 className="text-2xl font-semibold font-headline">ამჟამად აქტიური განცხადებები არ არის</h2>
-                        <p className="mt-2">გთხოვთ, შეამოწმოთ მოგვიანებით.</p>
+                        <Megaphone className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                        <h2 className="text-xl font-semibold font-headline">აქტიური განცხადებები არ არის</h2>
                     </div>
                 </CardContent>
             </Card>
@@ -64,10 +64,10 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
     }
 
     return (
-        <Card className="w-full shadow-xl rounded-xl flex flex-col overflow-hidden">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-primary font-headline">
-                    <Megaphone className="h-6 w-6"/>
+        <Card className="w-full shadow-xl rounded-xl flex flex-col overflow-hidden border">
+            <CardHeader className="bg-muted/30 p-2 md:p-3">
+                <CardTitle className="flex items-center gap-2 text-primary font-headline text-sm sm:text-base md:text-lg">
+                    <Megaphone className="h-4 w-4 md:h-5 md:w-5"/>
                     განცხადებები
                 </CardTitle>
             </CardHeader>
@@ -100,11 +100,11 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
                                 />
                               </div>
                             )}
-                            <div className="p-4 md:p-6 flex-grow flex flex-col space-y-2">
-                                <h2 className="text-2xl md:text-3xl font-bold font-headline text-foreground flex-shrink-0">
+                            <div className="p-3 md:p-4 flex-grow flex flex-col space-y-1">
+                                <h2 className="text-xl md:text-2xl font-bold font-headline text-foreground flex-shrink-0 leading-tight">
                                     {ann.title}
                                 </h2>
-                                <p className="text-base text-muted-foreground">
+                                <p className="text-sm md:text-base text-muted-foreground">
                                     {ann.content}
                                 </p>
                             </div>
@@ -114,8 +114,8 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
                   </CarouselContent>
                   {filteredAnnouncements.length > 1 && (
                     <>
-                      <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 bg-background/50 hover:bg-background/80" />
-                      <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 bg-background/50 hover:bg-background/80" />
+                      <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2 z-10 h-8 w-8 bg-background/50 hover:bg-background/80" />
+                      <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 z-10 h-8 w-8 bg-background/50 hover:bg-background/80" />
                     </>
                   )}
                 </Carousel>
