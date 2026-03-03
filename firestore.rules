@@ -1,11 +1,166 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // This rule allows anyone with your project's credentials to read and write
-    // to your entire database. It is not secure and should be updated.
-    // For more details, see: https://firebase.google.com/docs/firestore/security/get-started
-    match /{document=**} {
-      allow read, write: if true;
+
+    /**
+     * SCHOOLSYNC BOARD SECURITY RULES
+     *
+     * CORE PHILOSOPHY:
+     * This ruleset implements a hierarchical, school-centric security model. Access control is 
+     * fundamentally divided between "Public Board View" (read-only access to schedules and 
+     * announcements) and "Administrative Management" (full CRUD access for verified school admins).
+     *
+     * DATA STRUCTURE:
+     * All operational data (Lessons, Announcements, Events, Logs) is nested under top-level 
+     * school documents: /schools/{schoolId}. This structure enforces clear data boundaries.
+     *
+     * KEY SECURITY DECISIONS:
+     * 1. Authorization Independence: Admin status is verified by checking for the existence 
+     *    of a document in the /school_admins/ tree. This avoids expensive lookups on 
+     *    the school configuration documents themselves.
+     * 2. Public Readability: Most board content (Lessons, Events, Announcements) is 
+     *    publicly readable to facilitate real-time synchronization across various display devices.
+     * 3. Relational Integrity: On creation, documents must include a 'schoolId' that 
+     *    matches their path, ensuring queries remain efficient and scoped correctly.
+     * 4. Denormalization: The 'schoolId' is strictly required on sub-documents to enable 
+     *    fast, single-document authorization checks.
+     */
+
+    // --- HELPER FUNCTIONS ---
+
+    /** @description Checks if the user is authenticated with Firebase Auth. */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /** @description Checks if the authenticated user is an authorized admin for the specific school. */
+    function isSchoolAdmin(schoolId) {
+      return isSignedIn() && exists(/databases/$(database)/documents/school_admins/$(schoolId)/authorizedUsers/$(request.auth.uid));
+    }
+
+    /** @description Validates that the schoolId in the data matches the schoolId in the path. */
+    function isRelationalValid(schoolId) {
+      return request.resource.data.schoolId == schoolId;
+    }
+
+    /** @description Ensures the schoolId field cannot be changed during an update. */
+    function isRelationalImmutable() {
+      return request.resource.data.schoolId == resource.data.schoolId;
+    }
+
+    /** @description Combines admin check with document existence for updates and deletes. */
+    function isExistingAdmin(schoolId) {
+      return resource != null && isSchoolAdmin(schoolId);
+    }
+
+    // --- COLLECTION RULES ---
+
+    /**
+     * @description Rules for the root School document containing theme and branding.
+     * @path /schools/{schoolId}
+     * @allow (get, list) if true; (update) if user is verified admin for {schoolId}.
+     * @deny (update) if user is not an admin for this specific school.
+     * @principle Public configuration read with admin-only modifications.
+     */
+    match /schools/{schoolId} {
+      allow get, list: if true;
+      allow create: if isSignedIn(); // Prototyping: Allow any signed-in user to register a school.
+      allow update: if isExistingAdmin(schoolId);
+      allow delete: if isExistingAdmin(schoolId);
+
+      /**
+       * @description Rules for school lesson schedules.
+       * @path /schools/{schoolId}/lessons/{lessonId}
+       * @allow (create) if admin and data.schoolId matches path.
+       * @deny (create) if schoolId in data does not match schoolId in path.
+       * @principle Relational integrity and admin ownership.
+       */
+      match /lessons/{lessonId} {
+        allow get, list: if true;
+        allow create: if isSchoolAdmin(schoolId) && isRelationalValid(schoolId);
+        allow update: if isExistingAdmin(schoolId) && isRelationalImmutable();
+        allow delete: if isExistingAdmin(schoolId);
+      }
+
+      /**
+       * @description Rules for general school announcements.
+       * @path /schools/{schoolId}/announcements/{announcementId}
+       * @allow (get, list) if true.
+       * @deny (update) if not a school admin.
+       * @principle Public visibility of board content with restricted management.
+       */
+      match /announcements/{announcementId} {
+        allow get, list: if true;
+        allow create: if isSchoolAdmin(schoolId) && isRelationalValid(schoolId);
+        allow update: if isExistingAdmin(schoolId) && isRelationalImmutable();
+        allow delete: if isExistingAdmin(schoolId);
+
+        /**
+         * @description Rules for historical versions of announcements.
+         * @path /schools/{schoolId}/announcements/{announcementId}/versions/{versionId}
+         * @allow (read, write) only for school admins.
+         * @deny (get, list) for non-admin users.
+         * @principle Admin-only access to system metadata and history.
+         */
+        match /versions/{versionId} {
+          allow get, list: if isSchoolAdmin(schoolId);
+          allow create: if isSchoolAdmin(schoolId) && isRelationalValid(schoolId);
+          allow update: if isExistingAdmin(schoolId) && isRelationalImmutable();
+          allow delete: if isExistingAdmin(schoolId);
+        }
+      }
+
+      /**
+       * @description Rules for calendar events.
+       * @path /schools/{schoolId}/events/{eventId}
+       * @allow (get, list) if true.
+       * @deny (delete) if not a school admin.
+       */
+      match /events/{eventId} {
+        allow get, list: if true;
+        allow create: if isSchoolAdmin(schoolId) && isRelationalValid(schoolId);
+        allow update: if isExistingAdmin(schoolId) && isRelationalImmutable();
+        allow delete: if isExistingAdmin(schoolId);
+      }
+
+      /**
+       * @description Rules for the active emergency announcement overlay.
+       * @path /schools/{schoolId}/emergencyAnnouncements/active
+       * @allow (get) if true.
+       * @deny (list) if false (document is a singleton 'active').
+       */
+      match /emergencyAnnouncements/active {
+        allow get: if true;
+        allow list: if false; // Singleton document access by ID only
+        allow create: if isSchoolAdmin(schoolId) && isRelationalValid(schoolId);
+        allow update: if isExistingAdmin(schoolId) && isRelationalImmutable();
+        allow delete: if isExistingAdmin(schoolId);
+      }
+
+      /**
+       * @description Rules for auditing administrative actions.
+       * @path /schools/{schoolId}/adminActionLogs/{logId}
+       * @allow (read, write) only for school admins.
+       * @deny (create) if the adminIdentifier does not match the requester.
+       */
+      match /adminActionLogs/{logId} {
+        allow get, list: if isSchoolAdmin(schoolId);
+        allow create: if isSchoolAdmin(schoolId) && isRelationalValid(schoolId) && request.resource.data.adminIdentifier == request.auth.uid;
+        allow update, delete: if false; // Logs are immutable for audit integrity.
+      }
+    }
+
+    /**
+     * @description Rules for the admin mapping collection.
+     * @path /school_admins/{schoolId}/authorizedUsers/{userId}
+     * @allow (get) if current user is the user at the path.
+     * @deny (write) if not already an admin for this school.
+     * @principle Self-identification for auth and peer-admin management.
+     */
+    match /school_admins/{schoolId}/authorizedUsers/{userId} {
+      allow get: if isSignedIn() && request.auth.uid == userId;
+      allow list: if isSchoolAdmin(schoolId);
+      allow create, update, delete: if isSchoolAdmin(schoolId);
     }
   }
 }

@@ -1,6 +1,513 @@
 {
-    "entities": {},
-    "auth": {
-        "providers": []
+  "entities": {
+    "School": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "School",
+      "type": "object",
+      "description": "Represents a school, containing its unique identity and general board configuration settings.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the School entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The official name of the school, e.g., '1st Public School'."
+        },
+        "logoUrl": {
+          "type": "string",
+          "description": "URL to the school's logo image, displayed on the board.",
+          "format": "uri"
+        },
+        "themeColor": {
+          "type": "string",
+          "description": "Primary color for the school's board in hexadecimal format (e.g., '#30475E')."
+        },
+        "accentColor": {
+          "type": "string",
+          "description": "Accent color for interactive elements and highlights in hexadecimal format (e.g., '#6A4C93')."
+        },
+        "backgroundColor": {
+          "type": "string",
+          "description": "Background color for the school's board in hexadecimal format (e.g., '#F0F4F8')."
+        },
+        "bellSoundUrlDefault": {
+          "type": "string",
+          "description": "URL for the default bell sound played at lesson start/end times.",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "themeColor",
+        "accentColor",
+        "backgroundColor",
+        "bellSoundUrlDefault"
+      ]
+    },
+    "Lesson": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Lesson",
+      "type": "object",
+      "description": "Defines a scheduled lesson period within a school's bell schedule.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Lesson entity."
+        },
+        "schoolId": {
+          "type": "string",
+          "description": "Reference to the School this lesson belongs to. (Relationship: School 1:N Lesson)"
+        },
+        "lessonNumber": {
+          "type": "number",
+          "description": "The sequential number of the lesson in the daily schedule (e.g., 1, 2, 3)."
+        },
+        "startTime": {
+          "type": "string",
+          "description": "Start time of the lesson in HH:MM format (e.g., '08:30')."
+        },
+        "endTime": {
+          "type": "string",
+          "description": "End time of the lesson in HH:MM format (e.g., '09:15')."
+        },
+        "bellSoundUrlOverride": {
+          "type": "string",
+          "description": "Optional URL for a specific bell sound for this lesson, overriding the school's default. (Relationship: Lesson N:1 File)",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "id",
+        "schoolId",
+        "lessonNumber",
+        "startTime",
+        "endTime"
+      ]
+    },
+    "Announcement": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Announcement",
+      "type": "object",
+      "description": "Content displayed on the school's information board, excluding calendar events.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Announcement entity."
+        },
+        "schoolId": {
+          "type": "string",
+          "description": "Reference to the School this announcement belongs to. (Relationship: School 1:N Announcement)"
+        },
+        "title": {
+          "type": "string",
+          "description": "The main title or headline of the announcement."
+        },
+        "description": {
+          "type": "string",
+          "description": "The full text content of the announcement."
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "Optional URL for an image related to the announcement.",
+          "format": "uri"
+        },
+        "displayOrder": {
+          "type": "number",
+          "description": "The numerical order in which the announcement should appear within a group or slider."
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "Indicates whether the announcement is currently active and visible on the board."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the announcement was first created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the announcement was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "schoolId",
+        "title",
+        "description",
+        "displayOrder",
+        "isActive",
+        "createdAt"
+      ]
+    },
+    "Event": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Event",
+      "type": "object",
+      "description": "Represents a scheduled event for the school calendar, displayed on the information board.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Event entity."
+        },
+        "schoolId": {
+          "type": "string",
+          "description": "Reference to the School this event belongs to. (Relationship: School 1:N Event)"
+        },
+        "title": {
+          "type": "string",
+          "description": "The title of the event."
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description of the event."
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "Optional URL for an image associated with the event.",
+          "format": "uri"
+        },
+        "startDate": {
+          "type": "string",
+          "description": "Start date and time of the event.",
+          "format": "date-time"
+        },
+        "endDate": {
+          "type": "string",
+          "description": "End date and time of the event.",
+          "format": "date-time"
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "Indicates whether the event is currently active and should be displayed on the board."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the event was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "schoolId",
+        "title",
+        "description",
+        "startDate",
+        "endDate",
+        "isActive",
+        "createdAt"
+      ]
+    },
+    "AdminActionLog": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AdminActionLog",
+      "type": "object",
+      "description": "Records administrative actions performed within a school's board management system.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the AdminActionLog entry."
+        },
+        "schoolId": {
+          "type": "string",
+          "description": "Reference to the School where the action occurred. (Relationship: School 1:N AdminActionLog)"
+        },
+        "adminIdentifier": {
+          "type": "string",
+          "description": "An identifier for the administrator who performed the action (e.g., a user ID from an external authentication system)."
+        },
+        "actionType": {
+          "type": "string",
+          "description": "The type of action performed (e.g., 'lesson_added', 'announcement_edited', 'settings_changed')."
+        },
+        "entityType": {
+          "type": "string",
+          "description": "The type of entity affected by the action (e.g., 'Lesson', 'Announcement', 'School')."
+        },
+        "entityId": {
+          "type": "string",
+          "description": "The ID of the specific entity instance that was acted upon. (Relationship: AdminActionLog N:1 various entities)"
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Date and time when the action was performed.",
+          "format": "date-time"
+        },
+        "details": {
+          "type": "string",
+          "description": "A JSON string containing specific details of the change, such as old and new values, for auditing purposes."
+        }
+      },
+      "required": [
+        "id",
+        "schoolId",
+        "adminIdentifier",
+        "actionType",
+        "entityType",
+        "entityId",
+        "timestamp",
+        "details"
+      ]
+    },
+    "AnnouncementVersion": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AnnouncementVersion",
+      "type": "object",
+      "description": "Stores historical versions of announcements for backup, preview, and restore functionality.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the AnnouncementVersion entry."
+        },
+        "announcementId": {
+          "type": "string",
+          "description": "Reference to the original Announcement this version belongs to. (Relationship: Announcement 1:N AnnouncementVersion)"
+        },
+        "schoolId": {
+          "type": "string",
+          "description": "Reference to the School the announcement belongs to. (Relationship: School 1:N AnnouncementVersion)"
+        },
+        "versionNumber": {
+          "type": "number",
+          "description": "A sequential number identifying this version of the announcement."
+        },
+        "snapshotData": {
+          "type": "string",
+          "description": "The full JSON string representation of the announcement's state at this version."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when this version was saved.",
+          "format": "date-time"
+        },
+        "modifiedByIdentifier": {
+          "type": "string",
+          "description": "Identifier of the administrator who triggered this version save."
+        }
+      },
+      "required": [
+        "id",
+        "announcementId",
+        "schoolId",
+        "versionNumber",
+        "snapshotData",
+        "createdAt",
+        "modifiedByIdentifier"
+      ]
+    },
+    "EmergencyAnnouncement": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "EmergencyAnnouncement",
+      "type": "object",
+      "description": "Manages a school's urgent, temporary announcement that overlays the main content.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the EmergencyAnnouncement entity. Can be a fixed ID if only one emergency announcement is active per school."
+        },
+        "schoolId": {
+          "type": "string",
+          "description": "Reference to the School this emergency announcement applies to. (Relationship: School 1:1 EmergencyAnnouncement)"
+        },
+        "title": {
+          "type": "string",
+          "description": "The title of the emergency message."
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed content of the emergency message."
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "Optional URL for an image related to the emergency announcement.",
+          "format": "uri"
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "True if the emergency announcement is currently active and should be displayed."
+        },
+        "activatedAt": {
+          "type": "string",
+          "description": "Timestamp when the emergency announcement was activated.",
+          "format": "date-time"
+        },
+        "deactivatedAt": {
+          "type": "string",
+          "description": "Optional timestamp when the emergency announcement was deactivated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "schoolId",
+        "title",
+        "description",
+        "isActive",
+        "activatedAt"
+      ]
     }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/schools/{schoolId}",
+        "definition": {
+          "entityName": "School",
+          "schema": {
+            "$ref": "#/backend/entities/School"
+          },
+          "description": "Top-level collection for school configurations and public details. Documents contain school name, theme, colors, and default bell sound. Access to this data is governed by client-side password entry for the public board view. This document needs to contain `schoolId` for board access."
+        }
+      },
+      {
+        "path": "/schools/{schoolId}/lessons/{lessonId}",
+        "definition": {
+          "entityName": "Lesson",
+          "schema": {
+            "$ref": "#/backend/entities/Lesson"
+          },
+          "description": "Collection defining the scheduled lesson periods within a school's bell schedule. Includes denormalized 'schoolId' for direct access and simplified authorization checks for read access. Write access is restricted to school administrators.",
+          "params": [
+            {
+              "name": "schoolId",
+              "description": "The unique identifier of the school."
+            },
+            {
+              "name": "lessonId",
+              "description": "The unique identifier of the lesson."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/schools/{schoolId}/announcements/{announcementId}",
+        "definition": {
+          "entityName": "Announcement",
+          "schema": {
+            "$ref": "#/backend/entities/Announcement"
+          },
+          "description": "Collection for general announcements displayed on a school's information board. Includes denormalized 'schoolId' for direct access and simplified authorization checks for read access. Write access is restricted to school administrators.",
+          "params": [
+            {
+              "name": "schoolId",
+              "description": "The unique identifier of the school."
+            },
+            {
+              "name": "announcementId",
+              "description": "The unique identifier of the announcement."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/schools/{schoolId}/events/{eventId}",
+        "definition": {
+          "entityName": "Event",
+          "schema": {
+            "$ref": "#/backend/entities/Event"
+          },
+          "description": "Collection for scheduled events to be displayed on a school's calendar board. Includes denormalized 'schoolId' for direct access and simplified authorization checks for read access. Write access is restricted to school administrators.",
+          "params": [
+            {
+              "name": "schoolId",
+              "description": "The unique identifier of the school."
+            },
+            {
+              "name": "eventId",
+              "description": "The unique identifier of the event."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/schools/{schoolId}/adminActionLogs/{logId}",
+        "definition": {
+          "entityName": "AdminActionLog",
+          "schema": {
+            "$ref": "#/backend/entities/AdminActionLog"
+          },
+          "description": "Collection for recording administrative actions within a specific school. Includes denormalized 'schoolId' for direct access and authorization. Read and write access are restricted to school administrators.",
+          "params": [
+            {
+              "name": "schoolId",
+              "description": "The unique identifier of the school."
+            },
+            {
+              "name": "logId",
+              "description": "The unique identifier of the admin action log entry."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/schools/{schoolId}/announcements/{announcementId}/versions/{versionId}",
+        "definition": {
+          "entityName": "AnnouncementVersion",
+          "schema": {
+            "$ref": "#/backend/entities/AnnouncementVersion"
+          },
+          "description": "Subcollection storing historical versions of specific announcements. Includes denormalized 'schoolId' and 'announcementId' for hierarchical access and authorization. Read and write access are restricted to school administrators.",
+          "params": [
+            {
+              "name": "schoolId",
+              "description": "The unique identifier of the school."
+            },
+            {
+              "name": "announcementId",
+              "description": "The unique identifier of the parent announcement."
+            },
+            {
+              "name": "versionId",
+              "description": "The unique identifier of the announcement version."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/schools/{schoolId}/emergencyAnnouncements/active",
+        "definition": {
+          "entityName": "EmergencyAnnouncement",
+          "schema": {
+            "$ref": "#/backend/entities/EmergencyAnnouncement"
+          },
+          "description": "A single document representing the active emergency announcement for a school. Uses a fixed document ID 'active'. Includes denormalized 'schoolId' for direct access and authorization. Read access is public for the respective school; write/update access is restricted to school administrators.",
+          "params": [
+            {
+              "name": "schoolId",
+              "description": "The unique identifier of the school."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/school_admins/{schoolId}/authorizedUsers/{userId}",
+        "definition": {
+          "entityName": "SchoolAdminUser",
+          "schema": {
+            "$ref": "#/backend/entities/user"
+          },
+          "description": "Dedicated collection for managing school administrative roles. The existence of a document at this path signifies that the '{userId}' is an administrator for the '{schoolId}'. This structure ensures Authorization Independence by allowing rules to use `exists()` checks for admin access without querying parent data.",
+          "params": [
+            {
+              "name": "schoolId",
+              "description": "The unique identifier of the school."
+            },
+            {
+              "name": "userId",
+              "description": "The unique identifier (UID) of the Firebase authenticated user."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure for the SchoolSync Board application is designed around a hierarchical model, with each school serving as the root for its related data. This approach ensures clear ownership, simplified security rules, and efficient real-time updates.The core design principle of **Authorization Independence (CRITICAL)** is achieved through two main strategies. Firstly, for all school-specific subcollections (e.g., 'lessons', 'announcements', 'events'), the `schoolId` is explicitly included in the document path (`/schools/{schoolId}/...`) and within the document itself. This allows security rules to evaluate access based directly on the path parameter, eliminating the need for `get()` operations on parent documents to determine the school context.Secondly, administrative authorization is decoupled from the `School` document's content. Instead of embedding admin roles within each `School` document or its subcollection documents (which would necessitate complex denormalization updates or `get()` calls), a separate, dedicated collection `/school_admins/{schoolId}/authorizedUsers/{userId}` is used. Security rules can efficiently check the `exists()` of a document at this path to determine if `request.auth.uid` is an administrator for a given `schoolId`. This pattern ensures atomicity, avoids cascading updates, and prevents `get()` calls, adhering strictly to authorization independence.For **QAPs (Rules are not Filters)**, the structure facilitates secure `list` operations while acknowledging the limitations of Firestore rules in filtering results. For public-facing board data (lessons, announcements, events, emergency announcements), `read` access is granted to all users who have 'entered' a school (which is currently gated by a client-side password check, not Firebase Auth rules). Crucially, the application client is responsible for applying display filters (e.g., `isActive == true`, date ranges for events). This is acceptable for board content, as revealing an inactive item is typically a UI/UX concern rather than a security breach. Administrative collections (e.g., `adminActionLogs`, `announcementVersions`) are strictly protected, allowing `list` and `read` only to authenticated school administrators, aligning with their sensitive nature.The design also adheres to **Structural Segregation** by grouping all school-specific data under `/schools/{schoolId}`, ensuring a homogeneous security posture within each school's domain. **Access Modeling** utilizes hierarchical paths for school-owned data and an existence-based pattern for user roles. **Data Clarity and Predictability** are maintained through explicit state fields like `isActive`, consistent naming, and descriptive wildcards, ensuring the database schema is intuitive and debuggable."
+  }
 }
