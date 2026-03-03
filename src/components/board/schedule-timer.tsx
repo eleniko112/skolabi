@@ -150,13 +150,13 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
                 </div>
             </div>
         ) : status?.type === 'ended' ? (
-            <div className="text-center p-10 bg-muted/20 rounded-2xl border-2 border-dashed border-muted-foreground/30">
-                <Clock className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                <h3 className="text-2xl font-bold font-headline text-muted-foreground">{status.label}</h3>
-                <p className="text-sm text-muted-foreground mt-2">ხვალამდე!</p>
+            <div className="text-center p-6 bg-muted/20 rounded-xl border-2 border-dashed border-muted-foreground/30">
+                <Clock className="h-8 w-8 mx-auto mb-3 text-muted-foreground opacity-50" />
+                <h3 className="text-lg font-bold font-headline text-muted-foreground">{status.label}</h3>
+                <p className="text-sm text-muted-foreground mt-1">ხვალამდე!</p>
             </div>
         ) : (
-            <div className="text-center p-10 bg-muted/20 rounded-2xl border-2 border-dashed border-muted-foreground/30">
+            <div className="text-center p-6 bg-muted/20 rounded-xl border-2 border-dashed border-muted-foreground/30">
                 <p className="text-muted-foreground font-headline">განრიგი არ არის დამატებული</p>
             </div>
         )}
