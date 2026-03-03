@@ -1,6 +1,6 @@
 import { School } from './types';
 import { PlaceHolderImages } from './placeholder-images';
-import { getAnnouncements, initializeAnnouncements } from './announcements';
+import { initializeAnnouncements } from './announcements';
 import { getSchedule } from './schedule';
 import { getTheme } from './theme';
 import { getSettings } from './settings';
@@ -69,5 +69,29 @@ export const updateSchool = (updatedSchool: School) => {
 
     let schools = getSchools();
     schools = schools.map(school => school.id === updatedSchool.id ? updatedSchool : school);
+    storage.setItem(SCHOOLS_KEY, JSON.stringify(schools));
+}
+
+export const addSchool = (school: School) => {
+    const storage = getStorage();
+    if (!storage) return;
+
+    const schools = getSchools();
+    const updatedSchools = [...schools, school];
+    storage.setItem(SCHOOLS_KEY, JSON.stringify(updatedSchools));
+    
+    // Initialize data for the new school
+    initializeAnnouncements(school.id);
+    getSchedule(school.id);
+    getTheme(school.id);
+    getSettings(school.id);
+}
+
+export const deleteSchool = (schoolId: string) => {
+    const storage = getStorage();
+    if (!storage) return;
+
+    let schools = getSchools();
+    schools = schools.filter(s => s.id !== schoolId);
     storage.setItem(SCHOOLS_KEY, JSON.stringify(schools));
 }

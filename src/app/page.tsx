@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { SchoolSelector } from '@/components/school-selector';
 import { type School } from '@/lib/types';
-import { Building, Loader2 } from 'lucide-react';
+import { Building, Loader2, ShieldAlert } from 'lucide-react';
 import { getSchools } from '@/lib/schools';
+import { Button } from '@/components/ui/button';
 
 export default function Home() {
   const [schools, setSchools] = useState<School[]>([]);
@@ -12,7 +14,6 @@ export default function Home() {
 
   useEffect(() => {
     // getSchools(true) will initialize schools if they don't exist
-    // and then return the full list.
     const allSchools = getSchools(true);
     setSchools(allSchools);
     setIsLoading(false);
@@ -27,7 +28,7 @@ export default function Home() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-background p-8">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-background p-8 relative">
       <div className="text-center mb-16">
         <h1 className="font-headline text-6xl font-bold text-primary tracking-tight flex items-center gap-4">
           <Building className="w-14 h-14" />
@@ -37,7 +38,17 @@ export default function Home() {
           აირჩიეთ თქვენი სკოლა გასაგრძელებლად
         </p>
       </div>
+      
       <SchoolSelector schools={schools} />
+
+      <div className="absolute bottom-8 right-8">
+        <Button asChild variant="ghost" size="sm" className="text-muted-foreground hover:text-primary">
+          <Link href="/super-admin">
+            <ShieldAlert className="mr-2 h-4 w-4" />
+            სუპერ ადმინი
+          </Link>
+        </Button>
+      </div>
     </main>
   );
 }
