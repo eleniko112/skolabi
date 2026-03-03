@@ -38,7 +38,8 @@ import {
   Calendar,
   CloudLightning,
   PlusCircle,
-  AlertTriangle
+  AlertTriangle,
+  Image as ImageIcon
 } from 'lucide-react';
 import { useCollection, useMemoFirebase, useFirestore } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
@@ -75,6 +76,7 @@ const schoolSchema = z.object({
 const bulkAnnouncementSchema = z.object({
   title: z.string().min(3, "სათაური აუცილებელია"),
   content: z.string().min(10, "შინაარსი აუცილებელია"),
+  imageUrl: z.string().url("გთხოვთ მიუთითოთ ვალიდური სურათის მისამართი.").or(z.literal('')),
 });
 
 export function SuperAdminDashboard() {
@@ -114,7 +116,11 @@ export function SuperAdminDashboard() {
 
   const bulkAnnounceForm = useForm<z.infer<typeof bulkAnnouncementSchema>>({
     resolver: zodResolver(bulkAnnouncementSchema),
-    defaultValues: { title: '', content: '' },
+    defaultValues: { 
+      title: '', 
+      content: '',
+      imageUrl: 'https://picsum.photos/seed/bulk/1200/800'
+    },
   });
 
   const onPinSubmit = (values: z.infer<typeof pinSchema>) => {
@@ -156,7 +162,7 @@ export function SuperAdminDashboard() {
       addAnnouncement(firestore, school.id, {
         title: values.title,
         content: values.content,
-        imageUrl: "https://picsum.photos/seed/bulk/1200/800",
+        imageUrl: values.imageUrl || "https://picsum.photos/seed/bulk/1200/800",
         startDate: format(new Date(), 'yyyy-MM-dd'),
         endDate: format(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
       });
@@ -397,6 +403,12 @@ export function SuperAdminDashboard() {
                     )} />
                     <FormField control={bulkAnnounceForm.control} name="content" render={({ field }) => (
                       <FormItem><FormLabel>შინაარსი</FormLabel><Input placeholder="განცხადების ტექსტი..." {...field} /></FormItem>
+                    )} />
+                    <FormField control={bulkAnnounceForm.control} name="imageUrl" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2"><ImageIcon className="h-4 w-4" /> სურათის მისამართი (URL)</FormLabel>
+                        <Input placeholder="https://..." {...field} />
+                      </FormItem>
                     )} />
                     <Button type="submit" className="w-full" disabled={isBulkProcessing || !schools}>
                       {isBulkProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
