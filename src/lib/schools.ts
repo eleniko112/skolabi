@@ -40,19 +40,26 @@ export const getSchools = (initialize = false): School[] => {
     const storage = getStorage();
     if (!storage) return [];
 
-    let schools = JSON.parse(storage.getItem(SCHOOLS_KEY) || 'null') as School[] | null;
+    let schoolsString = storage.getItem(SCHOOLS_KEY);
+    let schools = schoolsString ? (JSON.parse(schoolsString) as School[]) : null;
 
-    if ((!schools || schools.length === 0) && initialize) {
-        schools = defaultSchools;
-        storage.setItem(SCHOOLS_KEY, JSON.stringify(schools));
+    if (initialize) {
+        const existingSchools = schools || [];
+        const missingDefaults = defaultSchools.filter(def => !existingSchools.some(ex => ex.id === def.id));
         
-        // Initialize data for each default school
-        schools.forEach(school => {
-            initializeAnnouncements(school.id);
-            getSchedule(school.id);
-            getTheme(school.id);
-            getSettings(school.id);
-        })
+        if (missingDefaults.length > 0) {
+            const updatedSchools = [...existingSchools, ...missingDefaults];
+            storage.setItem(SCHOOLS_KEY, JSON.stringify(updatedSchools));
+            
+            // Initialize data for new defaults
+            missingDefaults.forEach(school => {
+                initializeAnnouncements(school.id);
+                getSchedule(school.id);
+                getTheme(school.id);
+                getSettings(school.id);
+            });
+            return updatedSchools;
+        }
     }
     
     return schools || [];

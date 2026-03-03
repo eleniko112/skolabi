@@ -1,15 +1,16 @@
 import { ThemeInitializer } from '@/components/board/theme-initializer';
 
-export default function BoardLayout({
+export default async function BoardLayout({
   children,
   params,
 }: {
   children: React.ReactNode;
-  params: { schoolId: string };
+  params: Promise<{ schoolId: string }>;
 }) {
+  const { schoolId } = await params;
   return (
     <>
-      <ThemeInitializer schoolId={params.schoolId} />
+      <ThemeInitializer schoolId={schoolId} />
       {children}
     </>
   );

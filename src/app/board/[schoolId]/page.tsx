@@ -8,7 +8,7 @@ import { InfoBoard } from '@/components/board/info-board';
 import { ScheduleTimer } from '@/components/board/schedule-timer';
 import { QRCodeDisplay } from '@/components/board/qr-code-display';
 import Image from 'next/image';
-import { Settings, School as SchoolIcon, Home } from 'lucide-react';
+import { Settings, School as SchoolIcon, Home, Loader2 } from 'lucide-react';
 import { getSchoolById } from '@/lib/schools';
 import { School } from '@/lib/types';
 import { EmergencyOverlay } from '@/components/board/emergency-overlay';
@@ -17,19 +17,37 @@ export default function BoardPage() {
   const params = useParams<{ schoolId: string }>();
   const schoolId = params.schoolId;
   const [schoolInfo, setSchoolInfo] = useState<School | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
     if (schoolId) {
-      setSchoolInfo(getSchoolById(schoolId));
+      const info = getSchoolById(schoolId);
+      setSchoolInfo(info);
+      setIsLoading(false);
     }
   }, [schoolId]);
 
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   if (!schoolId || !schoolInfo) {
-    return <div className="flex min-h-screen items-center justify-center"><p>სკოლა არ მოიძებნა.</p></div>;
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4">
+        <p className="text-xl font-semibold">სკოლა არ მოიძებნა.</p>
+        <Button asChild variant="outline">
+          <Link href="/">მთავარზე დაბრუნება</Link>
+        </Button>
+      </div>
+    );
   }
 
   return (
-    <div className="flex flex-col h-screen bg-background">
+    <div className="flex flex-col h-screen bg-background overflow-hidden">
       <EmergencyOverlay schoolId={schoolId} />
       <header className="flex-shrink-0 flex items-center justify-between p-4 border-b bg-card shadow-sm z-20">
         <div className="flex items-center gap-4">
