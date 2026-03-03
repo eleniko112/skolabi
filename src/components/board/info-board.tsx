@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -16,7 +15,6 @@ import { useCollection, useMemoFirebase, useFirestore } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { Megaphone, Loader2 } from 'lucide-react';
 import { Announcement } from '@/lib/types';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 export function InfoBoard({ schoolId }: { schoolId: string }) {
     const firestore = useFirestore();
@@ -90,7 +88,7 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
                         <CarouselItem key={ann.id} className="h-full pl-0">
                           <div className="flex flex-col h-full w-full">
                             {ann.imageUrl && (
-                              <div className="w-full aspect-video relative overflow-hidden flex-shrink-0 bg-muted shadow-inner">
+                              <div className="w-full aspect-[21/9] relative overflow-hidden flex-shrink-0 bg-muted shadow-inner">
                                 <Image
                                   src={ann.imageUrl}
                                   alt={ann.title}
@@ -126,4 +124,3 @@ export function InfoBoard({ schoolId }: { schoolId: string }) {
         </Card>
     );
 }
-
