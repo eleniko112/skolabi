@@ -111,7 +111,7 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
             <Clock className="h-4 w-4 md:h-5 md:w-5" />
             ზარების განრიგი
             </CardTitle>
-            <div className="text-sm md:text-base font-bold font-mono text-muted-foreground tabular-nums">
+            <div className="text-lg md:text-xl font-bold font-mono text-muted-foreground tabular-nums">
                 {now.toLocaleTimeString('ka-GE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
             </div>
         </div>
@@ -147,10 +147,10 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
                 </div>
             </div>
         ) : status?.type === 'ended' ? (
-            <div className="text-center p-2.5 bg-muted/20 rounded-lg border-2 border-dashed border-muted-foreground/30">
-                <Clock className="h-5 w-5 mx-auto mb-1 text-muted-foreground opacity-50" />
-                <h3 className="text-sm font-bold font-headline text-muted-foreground leading-tight">{status.label}</h3>
-                <p className="text-xs text-muted-foreground">ხვალამდე!</p>
+            <div className="text-center p-3 bg-muted/20 rounded-lg border-2 border-dashed border-muted-foreground/30">
+                <Clock className="h-4 w-4 mx-auto mb-1 text-muted-foreground opacity-50" />
+                <h3 className="text-xs font-bold font-headline text-muted-foreground leading-tight">{status.label}</h3>
+                <p className="text-[10px] text-muted-foreground">ხვალამდე!</p>
             </div>
         ) : (
             <div className="text-center p-2 bg-muted/20 rounded-lg border-2 border-dashed border-muted-foreground/30">
@@ -158,9 +158,9 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
             </div>
         )}
 
-        <Separator className="mt-0.5" />
+        <Separator className="mt-0" />
 
-        <div className="space-y-1.5 flex-1 pb-2 mt-1">
+        <div className="space-y-1 flex-1 pb-2 mt-0.5">
           <div className="grid gap-1.5">
             {schedule?.map((item, index) => {
                 const start = timeToSeconds(item.startTime);
@@ -172,14 +172,14 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
                     <div 
                         key={item.id || index} 
                         className={cn(
-                            "flex items-center justify-between p-2 md:p-2.5 rounded-lg border transition-all duration-300",
+                            "flex items-center justify-between p-2 md:p-3 rounded-lg border transition-all duration-300",
                             isCurrent ? "bg-primary text-primary-foreground shadow-lg scale-[1.01] border-primary z-10" : 
                             isPast ? "bg-muted/40 opacity-50 grayscale border-transparent" : "bg-card hover:border-primary/30"
                         )}
                     >
                         <div className="flex items-center gap-2 md:gap-3">
                             <span className={cn(
-                                "h-6 w-6 md:h-7 md:w-7 flex items-center justify-center rounded-full text-xs md:text-sm font-bold",
+                                "h-7 w-7 md:h-8 md:w-8 flex items-center justify-center rounded-full text-xs md:text-sm font-bold",
                                 isCurrent ? "bg-white text-primary" : "bg-muted text-muted-foreground"
                             )}>
                                 {index + 1}
