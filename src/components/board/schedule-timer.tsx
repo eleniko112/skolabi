@@ -116,7 +116,7 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
             </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-3 flex-grow flex flex-col pt-3 px-3 md:px-4 overflow-y-auto">
+      <CardContent className="space-y-2 flex-grow flex flex-col pt-3 px-3 md:px-4 overflow-y-auto">
         {status && status.type !== 'ended' ? (
             <div className={cn(
                 "text-center p-3 md:p-4 rounded-xl border shadow-inner transition-colors",
@@ -158,7 +158,7 @@ export function ScheduleTimer({ schoolId }: { schoolId: string }) {
             </div>
         )}
 
-        <Separator className="my-1" />
+        <Separator className="mt-0.5 mb-1" />
 
         <div className="space-y-2 flex-1 pb-2">
           <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">დღევანდელი პერიოდები</h4>
