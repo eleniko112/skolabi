@@ -58,7 +58,6 @@ export function SchoolSelector({ schools }: SchoolSelectorProps) {
     if (!selectedSchool) return;
 
     setIsLoading(true);
-    // Simulate network delay
     setTimeout(() => {
       if (values.password === selectedSchool.password) {
         toast({
@@ -82,7 +81,7 @@ export function SchoolSelector({ schools }: SchoolSelectorProps) {
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 px-4">
         {schools.map((school) => {
-          const customColor = school.cardColor || "221 39% 49%"; // Fallback to blue
+          const customColor = school.cardColor || "221 39% 49%";
           
           return (
             <Card
@@ -97,13 +96,10 @@ export function SchoolSelector({ schools }: SchoolSelectorProps) {
               } as React.CSSProperties}
               onClick={() => handleSchoolSelect(school)}
             >
-              {/* Custom background highlight */}
               <div 
                 className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500 pointer-events-none"
                 style={{ background: `linear-gradient(to bottom right, hsl(${customColor}), transparent)` }}
               />
-              
-              {/* Decorative circle */}
               <div 
                 className="absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150 duration-700 opacity-20"
                 style={{ backgroundColor: `hsl(${customColor})` }}

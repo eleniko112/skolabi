@@ -4,12 +4,12 @@ export interface School {
   password?: string;
   adminPin?: string;
   logoUrl?: string;
-  cardColor?: string; // HSL format: "H S% L%"
-  // Firestore backend.json alignment
+  cardColor?: string; // HSL format for the card on home page: "H S% L%"
   backgroundColor?: string;
   themeColor?: string;
   accentColor?: string;
   bellSoundUrlDefault?: string;
+  displayOrder?: number;
 }
 
 export interface Announcement {

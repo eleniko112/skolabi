@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useState, useMemo } from 'react';
+import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
@@ -30,31 +30,22 @@ import {
   Loader2, 
   ArrowLeft, 
   Building, 
-  Megaphone, 
   PlusCircle, 
   Trash2,
-  Calendar,
-  Save,
-  Palette,
-  Layout,
   Edit,
-  X,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  Palette
 } from 'lucide-react';
 import { useCollection, useMemoFirebase, useFirestore } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, query, orderBy } from 'firebase/firestore';
 import { addSchool, deleteSchool, updateSchool } from '@/lib/schools';
-import { addAnnouncement } from '@/lib/announcements';
-import { setEmergencyState } from '@/lib/emergency';
-import { setSchedule } from '@/lib/schedule';
 import { hslToHex, hexToHsl } from '@/lib/theme';
-import { School, SchedulePeriod } from '@/lib/types';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { School } from '@/lib/types';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { Separator } from '@/components/ui/separator';
 
 const SUPER_PIN = '9999';
 
@@ -76,10 +67,15 @@ const schoolSchema = z.object({
 export function SuperAdminDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const firestore = useFirestore();
-  const schoolsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'schools') : null, [firestore]);
+  const { toast } = useToast();
+
+  const schoolsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'schools'), orderBy('displayOrder', 'asc'));
+  }, [firestore]);
+
   const { data: schools, isLoading: schoolsLoading } = useCollection<School>(schoolsQuery);
   const [editingSchoolId, setEditingSchoolId] = useState<string | null>(null);
-  const { toast } = useToast();
 
   const adminLogo = PlaceHolderImages.find(img => img.id === 'super-admin-logo')?.imageUrl;
 
@@ -113,14 +109,21 @@ export function SuperAdminDashboard() {
 
   const onSubmitSchool = (values: z.infer<typeof schoolSchema>) => {
     if (!firestore) return;
-    const schoolData: School = { ...values };
-
+    
     if (editingSchoolId) {
-      updateSchool(firestore, schoolData);
+      const existing = schools?.find(s => s.id === editingSchoolId);
+      updateSchool(firestore, { 
+        ...values, 
+        displayOrder: existing?.displayOrder ?? 0 
+      });
       toast({ title: 'სკოლა განახლდა' });
       setEditingSchoolId(null);
     } else {
-      addSchool(firestore, schoolData);
+      const maxOrder = schools?.reduce((max, s) => Math.max(max, s.displayOrder ?? 0), -1) ?? -1;
+      addSchool(firestore, { 
+        ...values, 
+        displayOrder: maxOrder + 1 
+      });
       toast({ title: 'სკოლა დაემატა' });
     }
     schoolForm.reset();
@@ -128,7 +131,34 @@ export function SuperAdminDashboard() {
 
   const onEditClick = (school: School) => {
     setEditingSchoolId(school.id);
-    schoolForm.reset({ ...school });
+    schoolForm.reset({
+      id: school.id,
+      name: school.name,
+      password: school.password || '',
+      adminPin: school.adminPin || '',
+      cardColor: school.cardColor || '221 39% 49%',
+      backgroundColor: school.backgroundColor || '220 20% 97%',
+      themeColor: school.themeColor || '221 39% 49%',
+      accentColor: school.accentColor || '347 77% 60%',
+    });
+  };
+
+  const moveSchool = (schoolId: string, direction: 'up' | 'down') => {
+    if (!firestore || !schools) return;
+    const index = schools.findIndex(s => s.id === schoolId);
+    if (index === -1) return;
+    if (direction === 'up' && index === 0) return;
+    if (direction === 'down' && index === schools.length - 1) return;
+
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    const currentSchool = schools[index];
+    const targetSchool = schools[targetIndex];
+
+    const currentOrder = currentSchool.displayOrder ?? index;
+    const targetOrder = targetSchool.displayOrder ?? targetIndex;
+
+    updateSchool(firestore, { ...currentSchool, displayOrder: targetOrder });
+    updateSchool(firestore, { ...targetSchool, displayOrder: currentOrder });
   };
 
   if (!isAuthenticated) {
@@ -155,7 +185,9 @@ export function SuperAdminDashboard() {
                 )}
               />
               <div className="flex gap-2">
-                <Button asChild variant="outline" className="w-full"><Link href="/">გაუქმება</Link></Button>
+                <Button asChild variant="outline" className="w-full">
+                  <Link href="/">გაუქმება</Link>
+                </Button>
                 <Button type="submit" className="w-full">შესვლა</Button>
               </div>
             </form>
@@ -177,47 +209,102 @@ export function SuperAdminDashboard() {
         <Button asChild variant="outline"><Link href="/"><ArrowLeft className="mr-2 h-4 w-4" /> მთავარზე</Link></Button>
       </div>
 
-      <Tabs defaultValue="schools">
-        <TabsList className="mb-8"><TabsTrigger value="schools">სკოლები</TabsTrigger></TabsList>
-        <TabsContent value="schools" className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <Card className="lg:col-span-2">
-                <CardHeader><CardTitle>სკოლების სია</CardTitle></CardHeader>
-                <CardContent>
-                    {schoolsLoading ? <Loader2 className="animate-spin" /> : (
-                        <Table>
-                            <TableHeader><TableRow><TableHead>სახელი</TableHead><TableHead className="text-right">მოქმედება</TableHead></TableRow></TableHeader>
-                            <TableBody>
-                                {schools?.map(school => (
-                                    <TableRow key={school.id}>
-                                        <TableCell>{school.name}</TableCell>
-                                        <TableCell className="text-right">
-                                            <Button variant="ghost" size="icon" onClick={() => onEditClick(school)}><Edit className="h-4 w-4" /></Button>
-                                            <Button variant="ghost" size="icon" onClick={() => deleteSchool(firestore!, school.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    )}
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader><CardTitle>{editingSchoolId ? 'რედაქტირება' : 'დამატება'}</CardTitle></CardHeader>
-                <CardContent>
-                    <Form {...schoolForm}>
-                        <form onSubmit={schoolForm.handleSubmit(onSubmitSchool)} className="space-y-4">
-                            <FormField control={schoolForm.control} name="name" render={({ field }) => <FormItem><FormLabel>სახელი</FormLabel><Input {...field} /></FormItem>} />
-                            <FormField control={schoolForm.control} name="id" render={({ field }) => <FormItem><FormLabel>ID</FormLabel><Input {...field} disabled={!!editingSchoolId} /></FormItem>} />
-                            <FormField control={schoolForm.control} name="password" render={({ field }) => <FormItem><FormLabel>პაროლი</FormLabel><Input {...field} /></FormItem>} />
-                            <FormField control={schoolForm.control} name="adminPin" render={({ field }) => <FormItem><FormLabel>ადმინ PIN</FormLabel><Input {...field} maxLength={4} /></FormItem>} />
-                            <Button type="submit" className="w-full">{editingSchoolId ? 'განახლება' : 'დამატება'}</Button>
-                            {editingSchoolId && <Button type="button" variant="ghost" className="w-full" onClick={() => setEditingSchoolId(null)}>გაუქმება</Button>}
-                        </form>
-                    </Form>
-                </CardContent>
-            </Card>
-        </TabsContent>
-      </Tabs>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="font-headline">სკოლების სია</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {schoolsLoading ? <div className="flex justify-center p-8"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>რიგი</TableHead>
+                    <TableHead>სახელი</TableHead>
+                    <TableHead className="text-right">მოქმედება</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {schools?.map((school, index) => (
+                    <TableRow key={school.id}>
+                      <TableCell className="w-20">
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => moveSchool(school.id, 'up')} disabled={index === 0}><ChevronUp className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => moveSchool(school.id, 'down')} disabled={index === (schools?.length || 0) - 1}><ChevronDown className="h-4 w-4" /></Button>
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-medium">{school.name}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" onClick={() => onEditClick(school)}><Edit className="h-4 w-4 text-blue-500" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => deleteSchool(firestore!, school.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {schools?.length === 0 && (
+                    <TableRow><TableCell colSpan={3} className="text-center py-8 text-muted-foreground">სკოლები არ მოიძებნა.</TableCell></TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-headline">{editingSchoolId ? 'სკოლის რედაქტირება' : 'ახალი სკოლის დამატება'}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Form {...schoolForm}>
+              <form onSubmit={schoolForm.handleSubmit(onSubmitSchool)} className="space-y-4">
+                <FormField control={schoolForm.control} name="name" render={({ field }) => <FormItem><FormLabel>სკოლის სახელი</FormLabel><Input {...field} /></FormItem>} />
+                <FormField control={schoolForm.control} name="id" render={({ field }) => <FormItem><FormLabel>უნიკალური ID</FormLabel><Input {...field} disabled={!!editingSchoolId} /></FormItem>} />
+                <FormField control={schoolForm.control} name="password" render={({ field }) => <FormItem><FormLabel>დაფის პაროლი</FormLabel><Input {...field} /></FormItem>} />
+                <FormField control={schoolForm.control} name="adminPin" render={({ field }) => <FormItem><FormLabel>ადმინ PIN</FormLabel><Input {...field} maxLength={4} /></FormItem>} />
+                
+                <Separator className="my-4" />
+                <div className="space-y-4">
+                  <h4 className="text-sm font-semibold flex items-center gap-2"><Palette className="h-4 w-4" /> ფერების პარამეტრები</h4>
+                  
+                  <FormField control={schoolForm.control} name="cardColor" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>მთავარი ბარათის ფერი</FormLabel>
+                      <div className="flex gap-2">
+                        <Input {...field} placeholder="HSL: 221 39% 49%" />
+                        <Input type="color" className="w-12 p-1" value={hslToHex(field.value)} onChange={(e) => field.onChange(hexToHsl(e.target.value))} />
+                      </div>
+                    </FormItem>
+                  )} />
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField control={schoolForm.control} name="themeColor" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>თემის ფერი</FormLabel>
+                        <Input type="color" className="w-full p-1" value={hslToHex(field.value)} onChange={(e) => field.onChange(hexToHsl(e.target.value))} />
+                      </FormItem>
+                    )} />
+                    <FormField control={schoolForm.control} name="backgroundColor" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>ფონის ფერი</FormLabel>
+                        <Input type="color" className="w-full p-1" value={hslToHex(field.value)} onChange={(e) => field.onChange(hexToHsl(e.target.value))} />
+                      </FormItem>
+                    )} />
+                  </div>
+                </div>
+
+                <Button type="submit" className="w-full mt-4">
+                  {editingSchoolId ? 'ცვლილებების შენახვა' : 'სკოლის შექმნა'}
+                </Button>
+                {editingSchoolId && (
+                  <Button type="button" variant="ghost" className="w-full" onClick={() => {
+                    setEditingSchoolId(null);
+                    schoolForm.reset();
+                  }}>გაუქმება</Button>
+                )}
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
