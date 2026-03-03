@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -24,7 +23,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { 
   ShieldAlert, 
@@ -36,15 +35,17 @@ import {
   Trash2,
   KeyRound,
   LayoutDashboard,
-  Image as ImageIcon,
+  ImageIcon,
   Calendar,
   Save,
-  RefreshCcw
+  RefreshCcw,
+  Palette
 } from 'lucide-react';
 import { getSchools, addSchool, deleteSchool } from '@/lib/schools';
 import { addAnnouncement } from '@/lib/announcements';
 import { setEmergencyState } from '@/lib/emergency';
 import { setSchedule, defaultSchedule } from '@/lib/schedule';
+import { setTheme, defaultTheme, hslToHex, hexToHsl } from '@/lib/theme';
 import { School } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -63,6 +64,9 @@ const schoolSchema = z.object({
   name: z.string().min(3, "სახელი უნდა იყოს მინიმუმ 3 სიმბოლო"),
   password: z.string().min(4, "პაროლი უნდა იყოს მინიმუმ 4 სიმბოლო"),
   adminPin: z.string().length(4, "ადმინ PIN უნდა იყოს 4 სიმბოლო"),
+  background: z.string(),
+  primary: z.string(),
+  accent: z.string(),
 });
 
 const globalAnnouncementSchema = z.object({
@@ -107,7 +111,15 @@ export function SuperAdminDashboard() {
 
   const schoolForm = useForm<z.infer<typeof schoolSchema>>({
     resolver: zodResolver(schoolSchema),
-    defaultValues: { id: '', name: '', password: '', adminPin: '' },
+    defaultValues: { 
+      id: '', 
+      name: '', 
+      password: '', 
+      adminPin: '',
+      background: defaultTheme.background,
+      primary: defaultTheme.primary,
+      accent: defaultTheme.accent,
+    },
   });
 
   const announcementForm = useForm<z.infer<typeof globalAnnouncementSchema>>({
@@ -147,7 +159,20 @@ export function SuperAdminDashboard() {
   };
 
   const onAddSchool = (values: z.infer<typeof schoolSchema>) => {
-    addSchool(values);
+    addSchool({
+      id: values.id,
+      name: values.name,
+      password: values.password,
+      adminPin: values.adminPin
+    });
+    
+    // Set custom theme for the new school
+    setTheme(values.id, {
+      background: values.background,
+      primary: values.primary,
+      accent: values.accent,
+    });
+
     setSchools(getSchools());
     schoolForm.reset();
     toast({ title: 'სკოლა დაემატა', description: `${values.name} წარმატებით დაემატა სიაში.` });
@@ -321,55 +346,123 @@ export function SuperAdminDashboard() {
             <Card>
               <CardHeader>
                 <CardTitle>სკოლის დამატება</CardTitle>
-                <CardDescription>ახალი სკოლის რეგისტრაცია სისტემაში.</CardDescription>
+                <CardDescription>ახალი სკოლის რეგისტრაცია და თემის მორგება.</CardDescription>
               </CardHeader>
               <CardContent>
                 <Form {...schoolForm}>
-                  <form onSubmit={schoolForm.handleSubmit(onAddSchool)} className="space-y-4">
-                    <FormField
-                      control={schoolForm.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>სკოლის სახელი</FormLabel>
-                          <FormControl><Input placeholder="მაგ: მე-5 საჯარო სკოლა" {...field} /></FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={schoolForm.control}
-                      name="id"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>უნიკალური ID</FormLabel>
-                          <FormControl><Input placeholder="mag-5-sajaro-skola" {...field} /></FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={schoolForm.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>დაფის პაროლი</FormLabel>
-                          <FormControl><Input placeholder="••••" {...field} /></FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={schoolForm.control}
-                      name="adminPin"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>ადმინ PIN</FormLabel>
-                          <FormControl><Input placeholder="••••" maxLength={4} {...field} /></FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  <form onSubmit={schoolForm.handleSubmit(onAddSchool)} className="space-y-6">
+                    <div className="space-y-4">
+                      <FormField
+                        control={schoolForm.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>სკოლის სახელი</FormLabel>
+                            <FormControl><Input placeholder="მაგ: მე-5 საჯარო სკოლა" {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={schoolForm.control}
+                        name="id"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>უნიკალური ID</FormLabel>
+                            <FormControl><Input placeholder="mag-5-sajaro-skola" {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={schoolForm.control}
+                          name="password"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>პაროლი</FormLabel>
+                              <FormControl><Input placeholder="••••" {...field} /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={schoolForm.control}
+                          name="adminPin"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>ადმინ PIN</FormLabel>
+                              <FormControl><Input placeholder="••••" maxLength={4} {...field} /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
+
+                    <Separator />
+                    
+                    <div className="space-y-4">
+                      <h4 className="text-sm font-semibold flex items-center gap-2"><Palette className="h-4 w-4" /> თემის ფერები</h4>
+                      
+                      <FormField
+                        control={schoolForm.control}
+                        name="background"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">ფონის ფერი</FormLabel>
+                            <div className="flex gap-2">
+                              <FormControl><Input className="h-8 text-xs" {...field} /></FormControl>
+                              <Input 
+                                type="color" 
+                                className="w-10 h-8 p-1 cursor-pointer" 
+                                value={hslToHex(field.value)} 
+                                onChange={(e) => field.onChange(hexToHsl(e.target.value))} 
+                              />
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={schoolForm.control}
+                        name="primary"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">მთავარი ფერი</FormLabel>
+                            <div className="flex gap-2">
+                              <FormControl><Input className="h-8 text-xs" {...field} /></FormControl>
+                              <Input 
+                                type="color" 
+                                className="w-10 h-8 p-1 cursor-pointer" 
+                                value={hslToHex(field.value)} 
+                                onChange={(e) => field.onChange(hexToHsl(e.target.value))} 
+                              />
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={schoolForm.control}
+                        name="accent"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">აქცენტის ფერი</FormLabel>
+                            <div className="flex gap-2">
+                              <FormControl><Input className="h-8 text-xs" {...field} /></FormControl>
+                              <Input 
+                                type="color" 
+                                className="w-10 h-8 p-1 cursor-pointer" 
+                                value={hslToHex(field.value)} 
+                                onChange={(e) => field.onChange(hexToHsl(e.target.value))} 
+                              />
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
                     <Button type="submit" className="w-full">
                       <PlusCircle className="mr-2 h-4 w-4" /> სკოლის დამატება
                     </Button>
