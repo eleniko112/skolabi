@@ -479,10 +479,10 @@ export function SuperAdminDashboard() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <Button variant="destructive" className="h-16 text-lg" onClick={() => handleBulkEmergency(true)} disabled={isBulkProcessing}>
-                    <CloudLightning className="mr-2 h-6 w-6" /> ჩართვა ყველასთვის
+                    <CloudLightning className="mr-2 h-6 w-6" /> ჩართვა
                   </Button>
                   <Button variant="outline" className="h-16 text-lg" onClick={() => handleBulkEmergency(false)} disabled={isBulkProcessing}>
-                    გამორთვა ყველასთვის
+                    გამორთვა
                   </Button>
                 </div>
               </CardContent>
