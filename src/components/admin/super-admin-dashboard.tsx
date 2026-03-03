@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -11,7 +12,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,21 +21,18 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from '@/components/ui/form';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { 
   ShieldAlert, 
   Loader2, 
   ArrowLeft, 
-  Building, 
-  PlusCircle, 
   Trash2,
   Edit,
   ChevronUp,
   ChevronDown,
-  Palette
+  Palette,
+  ExternalLink
 } from 'lucide-react';
 import { useCollection, useMemoFirebase, useFirestore } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
@@ -235,8 +232,19 @@ export function SuperAdminDashboard() {
                       </TableCell>
                       <TableCell className="font-medium">{school.name}</TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" onClick={() => onEditClick(school)}><Edit className="h-4 w-4 text-blue-500" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => deleteSchool(firestore!, school.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                        <div className="flex items-center justify-end gap-2">
+                          <Button asChild variant="outline" size="sm" className="hidden md:flex">
+                            <Link href={`/board/${school.id}/admin`}>
+                              <ExternalLink className="mr-2 h-4 w-4" /> მართვა
+                            </Link>
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => onEditClick(school)} title="რედაქტირება">
+                            <Edit className="h-4 w-4 text-blue-500" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => deleteSchool(firestore!, school.id)} title="წაშლა">
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
