@@ -95,7 +95,7 @@ export function SchoolSelector({ schools }: SchoolSelectorProps) {
                   colorIndex === 0 ? "before:from-primary before:to-blue-600 border-t-4 border-t-primary" : 
                   colorIndex === 1 ? "before:from-accent before:to-rose-600 border-t-4 border-t-accent" : 
                   colorIndex === 2 ? "before:from-orange-500 before:to-amber-600 border-t-4 border-t-orange-500" : 
-                  "before:from-emerald-500 before:to-teal-600 border-t-4 border-t-emerald-500"
+                  "before:from-emerald-700 before:to-teal-900 border-t-4 border-t-emerald-700"
               )}
               onClick={() => handleSchoolSelect(school)}
             >
@@ -105,7 +105,7 @@ export function SchoolSelector({ schools }: SchoolSelectorProps) {
                 colorIndex === 0 ? "bg-primary" : 
                 colorIndex === 1 ? "bg-accent" : 
                 colorIndex === 2 ? "bg-orange-500" : 
-                "bg-emerald-500"
+                "bg-emerald-700"
               )} />
               
               <CardHeader className="items-center text-center p-10 relative z-10">
@@ -114,7 +114,7 @@ export function SchoolSelector({ schools }: SchoolSelectorProps) {
                   colorIndex === 0 ? "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground" : 
                   colorIndex === 1 ? "bg-accent/10 text-accent group-hover:bg-accent group-hover:text-accent-foreground" : 
                   colorIndex === 2 ? "bg-orange-500/10 text-orange-600 group-hover:bg-orange-500 group-hover:text-white" : 
-                  "bg-emerald-500/10 text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white"
+                  "bg-emerald-700/10 text-emerald-700 group-hover:bg-emerald-700 group-hover:text-white"
                 )}>
                   <SchoolIcon className="w-14 h-14" />
                 </div>
@@ -123,7 +123,7 @@ export function SchoolSelector({ schools }: SchoolSelectorProps) {
                   colorIndex === 0 ? "group-hover:text-primary" : 
                   colorIndex === 1 ? "group-hover:text-accent" : 
                   colorIndex === 2 ? "group-hover:text-orange-600" : 
-                  "group-hover:text-emerald-600"
+                  "group-hover:text-emerald-800"
                 )}>
                   {school.name}
                 </CardTitle>
