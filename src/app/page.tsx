@@ -6,14 +6,14 @@ import { type School } from '@/lib/types';
 import { Building, Loader2, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCollection, useMemoFirebase, useFirestore } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, query, orderBy } from 'firebase/firestore';
 
 export default function Home() {
   const firestore = useFirestore();
 
   const schoolsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return collection(firestore, 'schools');
+    return query(collection(firestore, 'schools'), orderBy('displayOrder', 'asc'));
   }, [firestore]);
 
   const { data: schools, isLoading } = useCollection<School>(schoolsQuery);
@@ -28,10 +28,8 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-8 relative overflow-hidden">
-      {/* Decorative background elements */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 rounded-full blur-[120px] pointer-events-none animate-pulse" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent/10 rounded-full blur-[120px] pointer-events-none animate-pulse delay-700" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[60%] bg-indigo-500/5 rounded-full blur-[140px] pointer-events-none" />
       
       <div className="absolute top-8 right-8 z-10">
         <Button asChild variant="ghost" size="icon" className="text-muted-foreground hover:text-primary transition-colors bg-white/50 backdrop-blur-sm border shadow-sm" title="სუპერ ადმინი">
@@ -49,7 +47,7 @@ export default function Home() {
         <h1 className="font-headline text-6xl md:text-7xl font-bold text-primary tracking-tight">
           სკოლის დაფა
         </h1>
-        <p className="text-muted-foreground mt-4 text-xl max-w-lg mx-auto leading-relaxed">
+        <p className="text-muted-foreground mt-4 text-xl max-w-lg mx-auto leading-relaxed font-body">
           აირჩიეთ თქვენი სკოლა ციფრული საინფორმაციო დაფის სანახავად
         </p>
       </div>

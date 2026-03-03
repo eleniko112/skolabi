@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -32,7 +31,8 @@ import {
   ChevronUp,
   ChevronDown,
   Palette,
-  ExternalLink
+  ExternalLink,
+  Settings
 } from 'lucide-react';
 import { useCollection, useMemoFirebase, useFirestore } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
@@ -218,7 +218,7 @@ export function SuperAdminDashboard() {
                   <TableRow>
                     <TableHead>რიგი</TableHead>
                     <TableHead>სახელი</TableHead>
-                    <TableHead className="text-right">მოქმედება</TableHead>
+                    <TableHead className="text-right">მართვა</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -233,9 +233,9 @@ export function SuperAdminDashboard() {
                       <TableCell className="font-medium">{school.name}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <Button asChild variant="outline" size="sm" className="hidden md:flex">
+                          <Button asChild variant="outline" size="sm" className="bg-primary/5 hover:bg-primary/10 border-primary/20">
                             <Link href={`/board/${school.id}/admin`}>
-                              <ExternalLink className="mr-2 h-4 w-4" /> მართვა
+                              <Settings className="mr-2 h-4 w-4 text-primary" /> მართვა
                             </Link>
                           </Button>
                           <Button variant="ghost" size="icon" onClick={() => onEditClick(school)} title="რედაქტირება">
